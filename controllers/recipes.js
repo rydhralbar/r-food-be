@@ -1,6 +1,5 @@
 const recipes = require('../models/recipes.js')
-const db = require('../db') // import dari file ./db.js
-
+// const db = require('../db') // import dari file ./db.js
 
 // create recipe
 const createRecipe = async (req, res) => {
@@ -8,7 +7,7 @@ const createRecipe = async (req, res) => {
     const { photo, title, ingredients } = req.body
 
     // INSERT INTO food_recipe (photo, title, ingredients, video) VALUES ("")
-    const addToDb = await recipes.createNewRecipe({photo, title, ingredients})
+    const addToDb = await recipes.createNewRecipe({ photo, title, ingredients })
 
     res.json({
       status: true,
@@ -43,21 +42,21 @@ const getRecipes = async (req, res) => {
       getAllRecipe = await recipes.getRecipeSortCreatedDesc()
     } else if (sort === 'id') {
       getAllRecipe = await recipes.getRecipeSortId()
-   }else {
+    } else {
       getAllRecipe = await recipes.getAllRecipes()
     }
 
     if (id) {
-      const getSelectedRecipe = await recipes.getRecipeById({id})
+      const getSelectedRecipe = await recipes.getRecipeById({ id })
 
-      if(getSelectedRecipe.length > 0){
+      if (getSelectedRecipe.length > 0) {
         res.status(200).json({
           status: true,
           message: 'Retrieved successfully',
           data: getSelectedRecipe
         })
       } else {
-        throw 'Data is empty, please try again'
+        throw new Error('Data is empty, please try again')
       }
     } else {
       if (getAllRecipe.length > 0) {
@@ -68,7 +67,7 @@ const getRecipes = async (req, res) => {
           data: getAllRecipe
         })
       } else {
-        throw 'Data is empty, please try again'
+        throw new Error('Data is empty, please try again')
       }
     }
   } catch (error) {
@@ -85,14 +84,18 @@ const editRecipe = async (req, res) => {
   try {
     const { id } = req.params
     const { photo, title, ingredients } = req.body
+    let getRecipes
+    const checkId = await recipes.checkId({ id })
 
-    const getRecipes = await recipes.getRecipeById({id})
+    if (checkId.length >= 1) {
+      getRecipes = await recipes.getRecipeById({ id })
+    }
 
     if (getRecipes) {
       // EDIT DATA AT food_recipe (photo, title, ingredients) VALUES ("")
-      await recipes.editRecipe({id, photo, title, ingredients, getRecipes})
+      await recipes.editRecipe({ id, photo, title, ingredients, getRecipes })
     } else {
-      throw 'ID not registered'
+      throw new Error('ID not registered')
     }
 
     res.json({
@@ -115,18 +118,18 @@ const deleteRecipe = async (req, res) => {
 
     const checkId = await recipes.getRecipeById({ id })
 
-      if (checkId.length === 0) {
-         throw { code: 401, message: 'Data is empty' }
-      }
+    if (checkId.length === 0) {
+      throw new Error('Data is empty')
+    }
 
-    await recipes.deleteRecipe({id})
+    await recipes.deleteRecipe({ id })
 
     res.json({
       status: true,
       message: 'Deleted successfully'
     })
   } catch (error) {
-    res.status(error?.code ?? 500).json({
+    res.status(500).json({
       status: false,
       message: error?.message ?? error,
       data: []
@@ -144,11 +147,11 @@ const getRecipeSearch = async (req, res) => {
 
     let getSearchedRecipe
     if (sort === 'asc') {
-      getSearchedRecipe = await recipes.getRecipeSearchAsc({title})
+      getSearchedRecipe = await recipes.getRecipeSearchAsc({ title })
     } else if (sort === 'desc') {
-      getSearchedRecipe = await recipes.getRecipeSearchDesc({title})
+      getSearchedRecipe = await recipes.getRecipeSearchDesc({ title })
     } else {
-      getSearchedRecipe = await recipes.getRecipeSearch({title})
+      getSearchedRecipe = await recipes.getRecipeSearch({ title })
     }
 
     if (getSearchedRecipe.length > 0) {
@@ -159,10 +162,10 @@ const getRecipeSearch = async (req, res) => {
         data: getSearchedRecipe
       })
     } else {
-      throw 'DATA IS EMPTY, PLEASE TRY AGAIN'
+      throw new Error({ code: 405, message: 'Data is empty, please' })
     }
   } catch (error) {
-    res.status(500).json({
+    res.status(error?.code ?? 500).json({
       status: false,
       message: error?.message ?? error,
       data: []
@@ -170,5 +173,4 @@ const getRecipeSearch = async (req, res) => {
   }
 }
 
-
-module.exports = {createRecipe, getRecipes, editRecipe, deleteRecipe, getRecipeSearch}
+module.exports = { createRecipe, getRecipes, editRecipe, deleteRecipe, getRecipeSearch }

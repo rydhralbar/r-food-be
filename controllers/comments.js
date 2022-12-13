@@ -1,23 +1,22 @@
 const comments = require('../models/comments')
-const db = require('../db') // import dari file ./db.js
 
 const createComment = async (req, res) => {
   try {
-    const { comment, user_id, recipe_id } = req.body
+    const { comment, userId, recipeId } = req.body
 
-    const checkUserId = await comments.checkUserComment({ user_id })
+    const checkUserId = await comments.checkUserComment({ userId })
 
     if (checkUserId.length === 0) {
-       throw { code: 401, message: 'User ID not registered' }
+      throw new Error({ code: 401, message: 'User ID not registered' })
     }
 
-    const checkRecipeId = await comments.checkRecipeComment({ recipe_id })
+    const checkRecipeId = await comments.checkRecipeComment({ recipeId })
 
     if (checkRecipeId.length === 0) {
-       throw { code: 401, message: 'Recipe ID not registered' }
+      throw new Error({ code: 401, message: 'Recipe ID not registered' })
     }
     // INSERT INTO comment (comment) VALUES ("")
-    const addToDb = await comments.createComment({comment, user_id, recipe_id})
+    const addToDb = await comments.createComment({ comment, userId, recipeId })
 
     res.json({
       status: true,
@@ -40,13 +39,13 @@ const getComments = async (req, res) => {
 
     let getAllComments
 
-    if(sort === 'id'){
+    if (sort === 'id') {
       getAllComments = await comments.getCommentsSortId()
     } else {
       getAllComments = await comments.getAllComments()
     }
     if (id) {
-      const getSelectedComment = await comments.getCommentsById({id})
+      const getSelectedComment = await comments.getCommentsById({ id })
 
       if (getSelectedComment.length > 0) {
         res.status(200).json({
@@ -55,7 +54,7 @@ const getComments = async (req, res) => {
           data: getSelectedComment
         })
       } else {
-        throw 'Data is empty, please try again'
+        throw new Error('Data is empty, please try again')
       }
     } else {
       if (getAllComments.length > 0) {
@@ -66,7 +65,7 @@ const getComments = async (req, res) => {
           data: getAllComments
         })
       } else {
-        throw 'Data is empty, please try again'
+        throw new Error('Data is empty, please try again')
       }
     }
   } catch (error) {
@@ -81,32 +80,31 @@ const getComments = async (req, res) => {
 const editComment = async (req, res) => {
   try {
     const { id } = req.params
-    const { comment, user_id, recipe_id} = req.body
+    const { comment, userId, recipeId } = req.body
 
-    if(user_id){
-      const checkUserId = await comments.checkUserComment({ user_id })
-  
+    if (userId) {
+      const checkUserId = await comments.checkUserComment({ userId })
+
       if (checkUserId.length >= 1) {
-         throw { code: 401, message: 'User ID cannot be changed' }
+        throw new Error({ code: 401, message: 'User ID cannot be changed' })
       }
     }
 
-    if(recipe_id){
-      const checkRecipeId = await comments.checkRecipeComment({ recipe_id })
-  
+    if (recipeId) {
+      const checkRecipeId = await comments.checkRecipeComment({ recipeId })
+
       if (checkRecipeId.length >= 1) {
-         throw { code: 401, message: 'Recipe ID cannot be changed' }
+        throw new Error({ code: 401, message: 'Recipe ID cannot be changed' })
       }
     }
 
-
-    const getComments = await comments.getCommentsById({id})
+    const getComments = await comments.getCommentsById({ id })
 
     if (getComments && getComments.length > 0) {
       // INSERT INTO comment_recipe (comment) VALUES ("")
-      await comments.editComment({id, comment, user_id, recipe_id, getComments})
+      await comments.editComment({ id, comment, userId, recipeId, getComments })
     } else {
-      throw 'ID not registered'
+      throw new Error('ID not registered')
     }
 
     res.json({
@@ -128,9 +126,9 @@ const deleteComment = async (req, res) => {
     const checkId = await comments.getCommentsById({ id })
 
     if (checkId.length === 0) {
-       throw { code: 401, message: 'Data is empty' }
+      throw new Error({ code: 401, message: 'Data is empty' })
     }
-    await comments.deleteComment({id})
+    await comments.deleteComment({ id })
 
     res.json({
       status: true,
@@ -145,5 +143,4 @@ const deleteComment = async (req, res) => {
   }
 }
 
-module.exports = {createComment, getComments, editComment, deleteComment}
-
+module.exports = { createComment, getComments, editComment, deleteComment }

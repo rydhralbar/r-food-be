@@ -1,12 +1,12 @@
 const express = require('express')
-const db = require('./db.js') // import dari file ./db.js
-const app = express() // inisialisasi
+// const db = require('./db.js') // import dari file ./db.js
+const app = express() // initialization
 const cors = require('cors')
 const bodyParser = require('body-parser')
 const port = 3000
 const helmet = require('helmet')
 const xss = require('xss-clean')
-const { Validator, addCustomMessages, extend} = require('node-input-validator')
+// const { Validator } = require('node-input-validator')
 
 const userRoute = require('./routes/users.js')
 const recipeRoute = require('./routes/recipes.js')

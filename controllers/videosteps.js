@@ -2,16 +2,15 @@ const videos = require('../models/videosteps.js')
 
 const createVideo = async (req, res) => {
   try {
-    const { video_step1, video_step2, video_step3, recipe_id } = req.body
+    const { videoStep1, videoStep2, videoStep3, recipeId } = req.body
 
-    
-      const checkRecipeId = await videos.checkRecipeId({ recipe_id })
+    const checkRecipeId = await videos.checkRecipeId({ recipeId })
 
-      if (checkRecipeId.length === 0) {
-         throw { code: 401, message: 'Recipe ID not registered' }
-      }
-    // INSERT INTO video_step_recipe (video_step1, video_step2, video_step3, video_step4) VALUES ("")
-    const addToDb = await videos.createVideo({video_step1, video_step2, video_step3, recipe_id})
+    if (checkRecipeId.length === 0) {
+      throw new Error({ code: 401, message: 'Recipe ID not registered' })
+    }
+    // INSERT INTO videoStep_recipe (videoStep1, videoStep2, videoStep3, videoStep4) VALUES ("")
+    const addToDb = await videos.createVideo({ videoStep1, videoStep2, videoStep3, recipeId })
 
     res.json({
       status: true,
@@ -34,14 +33,14 @@ const getVideo = async (req, res) => {
 
     let getAllVideos
 
-    if(sort === 'id'){
+    if (sort === 'id') {
       getAllVideos = await videos.getSortVideoId()
     } else {
       getAllVideos = await videos.getVideos()
     }
 
     if (id) {
-      const getSelectedVideo = await videos.getVideoById({id})
+      const getSelectedVideo = await videos.getVideoById({ id })
 
       if (getSelectedVideo.length > 0) {
         res.status(200).json({
@@ -50,7 +49,7 @@ const getVideo = async (req, res) => {
           data: getSelectedVideo
         })
       } else {
-        throw 'DATA IS EMPTY, PLEASE TRY AGAIN'
+        throw new Error('DATA IS EMPTY, PLEASE TRY AGAIN')
       }
     } else {
       if (getAllVideos.length > 0) {
@@ -60,7 +59,7 @@ const getVideo = async (req, res) => {
           data: getAllVideos
         })
       } else {
-        throw 'Data is empty, please try again'
+        throw new Error('Data is empty, please try again')
       }
     }
   } catch (error) {
@@ -75,29 +74,29 @@ const getVideo = async (req, res) => {
 const editVideo = async (req, res) => {
   try {
     const { id } = req.params
-    const { video_step1, video_step2, video_step3, video_step4, video_step5, recipe_id } = req.body
+    const { videoStep1, videoStep2, videoStep3, videoStep4, videoStep5, recipeId } = req.body
 
-    const checkVideoId = await videos.checkVideoId({id})
+    const checkVideoId = await videos.checkVideoId({ id })
 
-    if(checkVideoId.length >= 1){
-      if(recipe_id){
-        const checkRecipeId = await videos.checkRecipeId({recipe_id})
-  
-        if(checkRecipeId.length >= 1){
-          throw {code: 404, message: 'Recipe ID cannot be changed'}
+    if (checkVideoId.length >= 1) {
+      if (recipeId) {
+        const checkRecipeId = await videos.checkRecipeId({ recipeId })
+
+        if (checkRecipeId.length >= 1) {
+          throw new Error({ code: 404, message: 'Recipe ID cannot be changed' })
         }
       }
     } else {
-      throw { code: 401, message: 'ID not registered'}
+      throw new Error({ code: 401, message: 'ID not registered' })
     }
 
     const getVideos = await videos.getVideos()
 
     if (getVideos) {
-      // EDIT DATA AT video_step_recipe (video_step1, video_step2, video_step3) VALUES ("")
-      await videos.editVideo({id, video_step1, video_step2, video_step3, video_step4, video_step5, getVideos, recipe_id})
+      // EDIT DATA AT videoStep_recipe (videoStep1, videoStep2, videoStep3) VALUES ("")
+      await videos.editVideo({ id, videoStep1, videoStep2, videoStep3, videoStep4, videoStep5, getVideos, recipeId })
     } else {
-      throw 'ID not registered'
+      throw new Error('ID not registered')
     }
 
     res.json({
@@ -119,9 +118,9 @@ const deleteVideo = async (req, res) => {
     const checkId = await videos.getVideoById({ id })
 
     if (checkId.length === 0) {
-       throw { code: 401, message: 'Data is empty' }
+      throw new Error({ code: 401, message: 'Data is empty' })
     }
-    await videos.deleteVideo({id})
+    await videos.deleteVideo({ id })
 
     res.json({
       status: true,
@@ -136,4 +135,4 @@ const deleteVideo = async (req, res) => {
   }
 }
 
-module.exports = {createVideo, getVideo, editVideo, deleteVideo}
+module.exports = { createVideo, getVideo, editVideo, deleteVideo }
