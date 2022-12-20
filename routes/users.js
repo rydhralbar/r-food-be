@@ -5,10 +5,10 @@ const userController = require('../controllers/users.js')
 const { useRedis } = require('../middlewares/redis')
 
 // create user
-router.post('', useRedis, validateCreateUser, userController.createUser)
+router.post('', validateCreateUser, userController.createUser)
 
 // get user
-router.get('/:id?', validateToken, userController.getUsers)
+router.get('/:id?', validateToken, useRedis, userController.getUsers)
 
 // edit user
 router.patch('/:id', validateEditUser, userController.editUser)

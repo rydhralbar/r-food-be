@@ -22,17 +22,17 @@ const useRedis = async (req, res, next) => {
         res.status(200).json({
           redis: true,
           status: true,
-          message: 'data berhasil di ambil',
-          total: total,
-          page: page,
-          limit: limit,
+          message: 'Retrieved successfully',
+          total: Number(total),
+          page: Number(page),
+          limit: Number(limit),
           data: JSON.parse(data),
         })
       } else {
         res.status(200).json({
           redis: true,
           status: true,
-          message: 'data berhasil di ambil',
+          message: 'Retrieved successfully',
           data: JSON.parse(data),
         })
       }
