@@ -47,12 +47,12 @@ const createUser = async (req, res) => {
           { public_id: uuidv4() },
           function (error, result){
             if (error) {
-              throw 'Upload foto gagal'
+              throw 'Photo upload failed'
             }
             
             bcrypt.hash(password, saltRounds, async (err, hash) => {
               if (err) {
-                throw 'Proses authentikasi gagal, silahkan coba lagi'
+                throw 'Authentication process failed, please try again'
               }
               
                 const addToDb = await accounts.createNewUserPhoto({
@@ -73,12 +73,12 @@ const createUser = async (req, res) => {
           
             // })
          } else {
-            throw new Error('Failed upload, only photo format input')
+            throw new Error('Upload failed, only photo format input')
           }
     } else {
       bcrypt.hash(password, saltRounds, async (err, hash) => {
         if (err) {
-          throw 'Proses authentikasi gagal, silahkan coba lagi'
+          throw 'Authentication process failed, please try again'
         }
   
       const addToDb2 = await accounts.createNewUser({
@@ -90,7 +90,7 @@ const createUser = async (req, res) => {
   
       res.json({
         status: true,
-        message: 'InserteD successfully',
+        message: 'Inserted successfully',
         data: addToDb2
       })
     })

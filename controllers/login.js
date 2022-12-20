@@ -12,13 +12,13 @@ const login = async (req, res) => {
 
     // kalo check email isinya tidak ada
     if (checkEmail?.length === 0) {
-      throw 'Email tidak terdaftar'
+      throw 'Unregistered email'
     }
 
     bcrypt.compare(password, checkEmail[0].password, (err, result) => {
       try {
         if (err) {
-          throw { code: 500, message: 'ada kesalah pada server' }
+          throw { code: 500, message: 'There was an error on the server' }
         }
 
         const token = jwt.sign(
@@ -29,19 +29,19 @@ const login = async (req, res) => {
             iat: new Date().getTime(),
           },
           process.env.JWT_KEY,
-          { expiresIn: '1d' }
+          // { expiresIn: '1d' }
         )
 
         if (result) {
           res.status(200).json({
             status: true,
-            message: 'login berhasil',
+            message: 'Login successful',
             data: {
               token,
             },
           })
         } else {
-          throw { code: 400, message: 'login gagal password salah' }
+          throw { code: 400, message: 'Login failed, wrong password' }
         }
       } catch (error) {
         res.status(error?.code ?? 500).json({
