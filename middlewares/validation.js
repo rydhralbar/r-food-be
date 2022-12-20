@@ -19,7 +19,8 @@ const validateCreateUser = (req, res, next) => {
     name: 'required|minLength:5|maxLength:50',
     email: 'required|minLength:5|maxLength:70|email',
     phone: 'required|minLength:11|maxLength:14|phoneNumber',
-    password: 'required|minLength:8|alphaNumeric'
+    password: 'required|minLength:8|alphaNumeric',
+    photo: 'nullable'
   })
 
   rules.check().then(function (success) {
@@ -209,6 +210,25 @@ const validateEditVideo = (req, res, next) => {
   })
 }
 
+const validateLogin = (req, res, next) => {
+  const rules = new Validator(req.body, {
+    email: 'required|email',
+    password: 'required'
+  })
+
+  rules.check().then(function (success) {
+    if (success) {
+      next()
+    } else {
+      res.status(400).json({
+        status: false,
+        message: rules.errors,
+        data: []
+      })
+    }
+  })
+}
+
 module.exports = {
   validateCreateUser,
   validateEditUser,
@@ -217,5 +237,6 @@ module.exports = {
   validateCreateComment,
   validateEditComment,
   validateCreateVideo,
-  validateEditVideo
+  validateEditVideo,
+  validateLogin
 }

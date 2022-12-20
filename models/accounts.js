@@ -12,27 +12,31 @@ const getUserByEmail = async (params) => {
   const { email } = params
 
   return await db`
-      SELECT email FROM account_user WHERE email = ${email}
+      SELECT * FROM account_user WHERE email = ${email}
     `
 }
 
 const getUserByPhone = async (params) => {
   const { phone } = params
 
-  console.log('check phone', phone)
-
   return await db`
       SELECT phone FROM account_user WHERE phone = ${phone}
     `
 }
 
+const getEmailUser = async (params) => {
+  const { email } = params
+
+  return await db`SELECT email FROM account_user WHERE email = ${email}`
+}
+
 // add new user to db
-const createNewUser = async (params) => {
-  const { name, email, phone, password } = params
+const createNewUserPhoto = async (params) => {
+  const { name, email, phone, password, photo } = params
 
   return await db`
-      INSERT INTO account_user (name, email, password, phone) 
-      VALUES (${name}, ${email}, ${phone}, ${password})
+      INSERT INTO account_user (name, email, phone, password, photo) 
+      VALUES (${name}, ${email}, ${phone}, ${password}, ${photo})
     `
 }
 
@@ -44,7 +48,7 @@ const getAllUser = async () => {
 
 // edit user data
 const editUser = async (params) => {
-  const { id, name, email, phone, password, photo, getUser } = params
+  const { id, name, email, phone, password, getUser } = params
 
   return await db`
   UPDATE account_user SET
@@ -88,10 +92,19 @@ const deleteUser = async (params) => {
   return await db`DELETE FROM "public"."account_user" WHERE "id" = ${id}`
 }
 
+const createNewUser = async (params) => {
+  const { name, email, phone, password } = params
+
+  return await db`
+      INSERT INTO account_user (name, email, phone, password) 
+      VALUES (${name}, ${email}, ${phone}, ${password})
+    `
+}
+
 module.exports = {
   getUserByEmail,
   getUserByPhone,
-  createNewUser,
+  createNewUserPhoto,
   getAllUser,
   editUser,
   getUserById,
@@ -100,5 +113,7 @@ module.exports = {
   getUserSortDesc,
   getUserPagin,
   getUserLimit,
-  getUserSortId
+  getUserSortId,
+  createNewUser,
+  getEmailUser
 }
