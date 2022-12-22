@@ -180,7 +180,7 @@ const getUsers = async (req, res) => {
 const editUser = async (req, res) => {
   try {
     const { id } = req.params
-    const { name, email, phone, password, photo } = req.body
+    const { name, email, phone, password } = req.body
 
     if (email) {
       const checkEmail = await accounts.getEmailUser({ email })
