@@ -180,7 +180,7 @@ const getUsers = async (req, res) => {
 const editUser = async (req, res) => {
   try {
     const { id } = req.params
-    const { name, email, phone, password } = req.body
+    const { name, email, phone, password, photo } = req.body
 
     if (email) {
       const checkEmail = await accounts.getEmailUser({ email })
@@ -200,33 +200,8 @@ const editUser = async (req, res) => {
     const getUser = await accounts.getUserById({ id })
 
     if (getUser.length === 1) {
-      const file = req.files.photo
-    // console.log(file)
-
-    if(file){
-      // const fileName = `${uuidv4()}-${file.name}`
-      // const uploadPath = `${path.dirname(require.main.filename)}/public/${fileName}`
-      const mimeType = file.mimetype.split('/')[1]
-      const allowFile = ['jpeg', 'jpg', 'png', 'webp']
-  
-      if (file.size > 1048576) {
-        throw new Error('File size too big, max 1mb')
-      }
-      
-      if (allowFile.find((item) => item === mimeType)) {
-        // Use the mv() method to place the file somewhere on your server
-        // file.mv(uploadPath, async function (err) {
-          // await sharp(file).jpeg({ quality: 20 }).toFile(uploadPath)
-        cloudinary.v2.uploader.upload(
-          file.tempFilePath,
-          { public_id: uuidv4() },
-          function (error, result){
-            if (error) {
-              throw 'Photo upload failed'
-            }
       // EDIT DATA AT account_user (name, email, phone, password, photo) VALUES ("")
-       accounts.editUser({ id, name, email, phone, password, photo, getUser })
-          })
+      await accounts.editUser({ id, name, email, phone, password, photo, getUser })
     } else {
       throw new Error('ID not registered')
     }
@@ -235,14 +210,14 @@ const editUser = async (req, res) => {
       status: true,
       message: 'Edited successfully'
     })
-  }}}catch (error) {
+  } catch (error) {
     res.status(500).json({
       status: false,
       message: error?.message ?? error,
       data: []
     })
-   }
   }
+}
 
 const deleteUser = async (req, res) => {
   try {
