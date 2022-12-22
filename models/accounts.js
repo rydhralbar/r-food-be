@@ -48,7 +48,7 @@ const getAllUser = async () => {
 
 // edit user data
 const editUser = async (params) => {
-  const { id, name, email, phone, password, getUser } = params
+  const { id, name, email, phone, password, photo, getUser } = params
 
   return await db`
   UPDATE account_user SET
