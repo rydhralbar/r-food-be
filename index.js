@@ -17,6 +17,7 @@ const videoRoute = require('./routes/videosteps')
 const searchRoute = require('./routes/searchrecipe')
 const authRoute = require('./routes/auth')
 
+
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }))
 
@@ -41,7 +42,7 @@ app.use(
 )
 
 // grant access for public
-app.use('/images', express.static(path.join(__dirname, 'public')))
+// app.use('/images', express.static(path.join(__dirname, 'public')))
 
 // users route
 app.use('/users', userRoute)
@@ -60,6 +61,10 @@ app.use('/recipe-search', searchRoute)
 
 // user login
 app.use('/auth', authRoute)
+
+app.get('/', (req, res) => {
+  res.json({ status: true, message: 'Server running', version: 1.1 })
+} )
 
 // running express
 app.listen(port, () => {
