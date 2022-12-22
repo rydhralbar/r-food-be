@@ -63,7 +63,7 @@ app.use('/recipe-search', searchRoute)
 app.use('/auth', authRoute)
 
 app.get('/', (req, res) => {
-  res.json({ status: true, message: 'Server running', version: 1.1 })
+  res.json({ status: true, message: 'Server running', version: '1.0' })
 } )
 
 // running express
