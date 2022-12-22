@@ -225,6 +225,7 @@ const editUser = async (req, res) => {
               throw 'Photo upload failed'
             }
       // EDIT DATA AT account_user (name, email, phone, password, photo) VALUES ("")
+       accounts.editUser({ id, name, email, phone, password, photo, getUser })
           })
     } else {
       throw new Error('ID not registered')
