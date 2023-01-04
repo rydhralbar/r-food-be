@@ -56,7 +56,7 @@ app.use('/recipes-comment', commentRoute)
 // video step route
 app.use('/recipes-video', videoRoute)
 
-// // get searched recipe
+// get searched recipe
 app.use('/recipe-search', searchRoute)
 
 // user login

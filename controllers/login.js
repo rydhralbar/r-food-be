@@ -8,9 +8,7 @@ const login = async (req, res) => {
     const { email, password } = req.body
 
     const checkEmail = await accounts.getUserByEmail({ email })
-    // console.log(checkEmail)
 
-    // kalo check email isinya tidak ada
     if (checkEmail?.length === 0) {
       throw 'Unregistered email'
     }
