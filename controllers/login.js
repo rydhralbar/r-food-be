@@ -10,7 +10,7 @@ const login = async (req, res) => {
     const checkEmail = await accounts.getUserByEmail({ email })
 
     if (checkEmail?.length === 0) {
-      throw 'Unregistered email'
+      throw { code: 401, message: 'Unregistered email' }
     }
 
     bcrypt.compare(password, checkEmail[0].password, (err, result) => {
@@ -36,6 +36,7 @@ const login = async (req, res) => {
             message: 'Login successful',
             data: {
               token,
+              profile: checkEmail[0],
             },
           })
         } else {
