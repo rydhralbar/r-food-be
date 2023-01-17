@@ -2,12 +2,21 @@ const db = require('../db') // import from file db.js
 
 // create recipe to db
 const createNewRecipe = async (params) => {
-  const { photo, title, ingredients } = params
+  const { title, ingredients, slug } = params
 
   return await db`
-     INSERT INTO food_recipe (photo, title, ingredients) 
-     VALUES (${photo}, ${title}, ${ingredients})
+     INSERT INTO food_recipe (title, ingredients, slug) 
+     VALUES (${title}, ${ingredients}, ${slug})
    `
+}
+
+const createNewRecipePhoto = async (params) => {
+  const { title, photo, ingredients, slug} = params
+
+  return await db`
+  INSERT INTO food_recipe (title, photo, ingredients, slug) 
+  VALUES (${title}, ${photo}, ${ingredients}, ${slug})
+`
 }
 
 // get recipe from db
@@ -34,9 +43,23 @@ const getRecipeById = async (params) => {
   const { id } = params
 
   return await db`
-     SELECT * FROM food_recipe WHERE id = ${id}
+     SELECT * FROM food_recipe WHERE slug = ${id}
    `
 }
+
+const getRecipePagin = async (params) => {
+  const { page, limit } = params
+
+  return await db`SELECT * FROM food_recipe LIMIT ${limit} OFFSET ${
+      limit * (page - 1)
+   }`
+}
+
+// const getPaginLimit = async (params) => {
+//   const { limit } = params
+
+//   return await db`SELECT * FROM food_recipe LIMIT ${limit}`
+// }
 
 // check recipe id
 const checkId = async (params) => {
@@ -97,8 +120,13 @@ const getRecipeSortId = async () => {
   return await db`SELECT * FROM food_recipe ORDER BY id ASC`
 }
 
+const getCountRecipe = async () => {
+  return await db`SELECT COUNT(id) FROM food_recipe`
+}
+
 module.exports = {
   createNewRecipe,
+  createNewRecipePhoto,
   getAllRecipes,
   editRecipe,
   getRecipeById,
@@ -111,5 +139,8 @@ module.exports = {
   getRecipeSearchDesc,
   getRecipeSearch,
   getRecipeSortId,
-  checkId
+  checkId,
+  getRecipePagin,
+  // getPaginLimit,
+  getCountRecipe
 }

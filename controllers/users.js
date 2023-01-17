@@ -25,10 +25,10 @@ const createUser = async (req, res) => {
     }
     
     // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
-    const file = req.files.photo
-    // console.log(file)
+    // const { file } = req.files.photo
+    console.log(req)
 
-    if(file){
+    if(req.files && req.files.photo.file){
       // const fileName = `${uuidv4()}-${file.name}`
       // const uploadPath = `${path.dirname(require.main.filename)}/public/${fileName}`
       const mimeType = file.mimetype.split('/')[1]
