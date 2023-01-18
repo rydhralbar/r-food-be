@@ -15,6 +15,6 @@ router.patch('/:id', validateEditRecipe, userController.editRecipe)
 router.delete('/:id', userController.deleteRecipe)
 
 // get searched recipes
-// router.get('/:title', userController.getRecipeSearch)
+router.get('/search/name', userController.getRecipeSearch)
 
 module.exports = router

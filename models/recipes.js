@@ -113,7 +113,7 @@ const getRecipeSearchDesc = async (params) => {
 const getRecipeSearch = async (params) => {
   const { title } = params
 
-  return await db`SELECT * FROM food_recipe WHERE LOWER (title) LIKE LOWER (${'%' + title + '%'})`
+  return await db`SELECT * FROM food_recipe WHERE title ILIKE ${'%' + title + '%'}`
 }
 
 const getRecipeSortId = async () => {
