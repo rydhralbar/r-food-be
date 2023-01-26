@@ -11,7 +11,7 @@ const { cloudinary } = require('../helper')
 const createUser = async (req, res) => {
   try {
     const { name, email, phone, password} = req.body
-
+    
     const checkEmail = await accounts.getUserByEmail({ email })
 
     if (checkEmail.length >= 1) {
@@ -23,14 +23,8 @@ const createUser = async (req, res) => {
     if (checkPhone.length >= 1) {
       throw { code: 401, message: 'Number already in use' }
     }
-    
-    // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
-    // const { file } = req.files.photo
-    console.log(req)
 
     if(req.files && req.files.photo.file){
-      // const fileName = `${uuidv4()}-${file.name}`
-      // const uploadPath = `${path.dirname(require.main.filename)}/public/${fileName}`
       const mimeType = file.mimetype.split('/')[1]
       const allowFile = ['jpeg', 'jpg', 'png', 'webp']
   

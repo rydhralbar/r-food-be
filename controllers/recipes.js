@@ -1,4 +1,4 @@
-const recipes = require('../models/recipes.js');
+  const recipes = require('../models/recipes.js');
 // const db = require('../db') // import dari file ./db.js
 const { cloudinary } = require('../helper');
 const { v4: uuidv4 } = require('uuid')
@@ -8,10 +8,10 @@ const createRecipe = async (req, res) => {
   try {
     const { title, ingredients, slug} = req.body
     // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
-    const file = req.files.photo
+    // const file = req.files.photo
     // console.log(file)
 
-    if(file){
+    if(req.files && req.files.photo.file){
       // const fileName = `${uuidv4()}-${file.name}`
       // const uploadPath = `${path.dirname(require.main.filename)}/public/${fileName}`
       const mimeType = file.mimetype.split('/')[1]
@@ -78,7 +78,7 @@ const createRecipe = async (req, res) => {
 const getRecipes = async (req, res) => {
   try {
     const { id } = req.params
-    const { sort, page, limit } = req.query
+    const { sort, page, limit, sortType } = req.query
 
     let getAllRecipe;
     let getCountRecipe;

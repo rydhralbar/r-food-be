@@ -3,7 +3,7 @@ const { validateCreateRecipe, validateEditRecipe } = require('../middlewares/val
 const userController = require('../controllers/recipes.js')
 
 // create recipe
-router.post('', validateCreateRecipe, userController.createRecipe)
+router.post('/add', validateCreateRecipe, userController.createRecipe)
 
 // get recipes
 router.get('/:id?', userController.getRecipes)
