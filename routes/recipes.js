@@ -3,7 +3,7 @@ const { validateCreateRecipe, validateEditRecipe } = require('../middlewares/val
 const userController = require('../controllers/recipes.js')
 
 // create recipe
-router.post('', validateCreateRecipe, userController.createRecipe)
+router.post('/add', validateCreateRecipe, userController.createRecipe)
 
 // get recipes
 router.get('/:id?', userController.getRecipes)
@@ -18,6 +18,6 @@ router.patch('/:id', validateEditRecipe, userController.editRecipe)
 router.delete('/:id', userController.deleteRecipe)
 
 // get searched recipes
-// router.get('/:title', userController.getRecipeSearch)
+router.get('/search/name', userController.getRecipeSearch)
 
 module.exports = router

@@ -1,21 +1,72 @@
-const recipes = require('../models/recipes.js')
+  const recipes = require('../models/recipes.js');
 // const db = require('../db') // import dari file ./db.js
+const { cloudinary } = require('../helper');
+const { v4: uuidv4 } = require('uuid')
 
 // create recipe
 const createRecipe = async (req, res) => {
   try {
-    const { photo, title, ingredients } = req.body
+    const { title, ingredients, slug} = req.body
+    // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
+    // const file = req.files.photo
+    // console.log(file)
 
-    // INSERT INTO food_recipe (photo, title, ingredients, video) VALUES ("")
-    const addToDb = await recipes.createNewRecipe({ photo, title, ingredients })
+    if(req.files && req.files.photo.file){
+      // const fileName = `${uuidv4()}-${file.name}`
+      // const uploadPath = `${path.dirname(require.main.filename)}/public/${fileName}`
+      const mimeType = file.mimetype.split('/')[1]
+      const allowFile = ['jpeg', 'jpg', 'png', 'webp']
+  
+      if (file.size > 1048576) {
+        throw new Error('File size too big, max 1mb')
+      }
+      
+      if (allowFile.find((item) => item === mimeType)) {
+        // Use the mv() method to place the file somewhere on your server
+        // file.mv(uploadPath, async function (err) {
+          // await sharp(file).jpeg({ quality: 20 }).toFile(uploadPath)
+        cloudinary.v2.uploader.upload(
+          file.tempFilePath,
+          { public_id: uuidv4() },
+          function (error, result){
+            if (error) {
+              throw 'Photo upload failed'
+            }
 
-    res.json({
-      status: true,
-      message: 'Inserted successfully',
-      data: addToDb
-    })
+                const addToDb = recipes.createNewRecipePhoto({
+                  title,
+                  photo: result.url,
+                  ingredients,
+                  slug,  
+                })
+                res.json({
+                  status: true,
+                  message: 'Inserted successfully',
+                  data: addToDb
+                })
+              })
+          
+            // })
+         } else {
+            throw new Error('Upload failed, only photo format input')
+          }
+    } else {
+      const addToDb2 = await accounts.createNewRecipe({
+        title,
+        ingredients,
+        slug,
+      })
+  
+      res.json({
+        status: true,
+        message: 'Inserted successfully',
+        data: addToDb2
+      })
+    }
+    
+
   } catch (error) {
-    res.status(500).json({
+    res.status(error?.code ?? 500).json({
       status: false,
       message: error?.message ?? error,
       data: []
@@ -27,9 +78,12 @@ const createRecipe = async (req, res) => {
 const getRecipes = async (req, res) => {
   try {
     const { id } = req.params
-    const { sort } = req.query
+    const { sort, page, limit, sortType } = req.query
 
-    let getAllRecipe
+    let getAllRecipe;
+    let getCountRecipe;
+
+    getCountRecipe = await recipes.getCountRecipe()
 
     // TO SORT BY NAME AND SORT BY DATE
     if (sort === 'title_asc') {
@@ -42,9 +96,19 @@ const getRecipes = async (req, res) => {
       getAllRecipe = await recipes.getRecipeSortCreatedDesc()
     } else if (sort === 'id') {
       getAllRecipe = await recipes.getRecipeSortId()
+    } else if ( page && limit) {
+      getAllRecipe = await recipes.getRecipePagin({ page, limit })
     } else {
       getAllRecipe = await recipes.getAllRecipes()
     }
+
+    // connect.set('url', req.originalUrl, 'ex', 10)
+    // connect.set('data', JSON.stringify(getAllRecipe), 'ex', 10)
+    // connect.set('total', getAllRecipe?.length, 'ex', 10)
+    // connect.set('limit', limit, 'ex', 10)
+    // connect.set('page', page, 'ex', 10)
+    // connect.set('is_paginate', 'true', 'ex', 10)
+    // connect.set('all_pagination', getCountRecipe, 'ex', 10)
 
     if (id) {
       const getSelectedRecipe = await recipes.getRecipeById({ id })
@@ -53,7 +117,7 @@ const getRecipes = async (req, res) => {
         res.status(200).json({
           status: true,
           message: 'Retrieved successfully',
-          data: getSelectedRecipe
+          data: getSelectedRecipe,
         })
       } else {
         throw new Error('Data is empty, please try again')
@@ -64,7 +128,10 @@ const getRecipes = async (req, res) => {
           status: true,
           message: 'Retrieved successfully',
           total: getAllRecipe.length,
-          data: getAllRecipe
+          page: Number(page),
+          limit: Number(limit),
+          data: getAllRecipe,
+          all_pagination: getCountRecipe,
         })
       } else {
         throw new Error('Data is empty, please try again')

@@ -10,12 +10,12 @@ const { cloudinary } = require('../helper')
 
 const createUser = async (req, res) => {
   try {
-    const { name, email, phone, password} = req.body
+    const { name, email, phone, password } = req.body
 
     const checkEmail = await accounts.getUserByEmail({ email })
 
     if (checkEmail.length >= 1) {
-      throw { code : 401, message: 'Email already in use' }
+      throw { code: 401, message: 'Email already in use' }
     }
 
     const checkPhone = await accounts.getUserByPhone({ phone })
@@ -23,78 +23,77 @@ const createUser = async (req, res) => {
     if (checkPhone.length >= 1) {
       throw { code: 401, message: 'Number already in use' }
     }
-    
+
     console.log(req.files.photo)
-    if(req.files && req.files.photo){
+    if (req.files && req.files.photo) {
       const file = req.files.photo
       // const fileName = `${uuidv4()}-${file.name}`
       // const uploadPath = `${path.dirname(require.main.filename)}/public/${fileName}`
       const mimeType = file.mimetype.split('/')[1]
       const allowFile = ['jpeg', 'jpg', 'png', 'webp']
-  
+
       if (file.size > 1048576) {
         throw new Error('File size too big, max 1mb')
       }
-      
+
       if (allowFile.find((item) => item === mimeType)) {
         // Use the mv() method to place the file somewhere on your server
         // file.mv(uploadPath, async function (err) {
-          // await sharp(file).jpeg({ quality: 20 }).toFile(uploadPath)
+        // await sharp(file).jpeg({ quality: 20 }).toFile(uploadPath)
         cloudinary.v2.uploader.upload(
           file.tempFilePath,
           { public_id: uuidv4() },
-          function (error, result){
+          function (error, result) {
             if (error) {
               throw 'Photo upload failed'
             }
-            
+
             bcrypt.hash(password, saltRounds, async (err, hash) => {
               if (err) {
                 throw 'Authentication process failed, please try again'
               }
-              
-                const addToDb = await accounts.createNewUserPhoto({
-                  name,
-                  email,
-                  phone,
-                  password: hash,
-                  // photo: `/images/${fileName}`
-                  photo: result.url,  
-                })
-                res.json({
-                  status: true,
-                  message: 'Inserted successfully',
-                  data: addToDb
-                })
+
+              const addToDb = await accounts.createNewUserPhoto({
+                name,
+                email,
+                phone,
+                password: hash,
+                // photo: `/images/${fileName}`
+                photo: result.url
+              })
+              res.json({
+                status: true,
+                message: 'Inserted successfully',
+                data: addToDb
               })
             })
-          
-            // })
-         } else {
-            throw new Error('Upload failed, only photo format input')
           }
+        )
+
+        // })
+      } else {
+        throw new Error('Upload failed, only photo format input')
+      }
     } else {
       bcrypt.hash(password, saltRounds, async (err, hash) => {
         if (err) {
           throw 'Authentication process failed, please try again'
         }
-  
-      const addToDb2 = await accounts.createNewUser({
-        name,
-        email,
-        phone,
-        password: hash,
-      })
-  
-      res.json({
-        status: true,
-        message: 'Inserted successfully',
-        data: addToDb2
-      })
-    })
-    }
-    
 
+        const addToDb2 = await accounts.createNewUser({
+          name,
+          email,
+          phone,
+          password: hash
+        })
+
+        res.json({
+          status: true,
+          message: 'Inserted successfully',
+          data: addToDb2
+        })
+      })
+    }
   } catch (error) {
     res.status(error?.code ?? 500).json({
       status: false,
@@ -151,8 +150,6 @@ const getUsers = async (req, res) => {
         throw new Error('Data is empty, please try again')
       }
     } else {
-
-
       if (getAllUser.length > 0) {
         res.status(200).json({
           status: true,
@@ -194,12 +191,12 @@ const editUser = async (req, res) => {
         throw { code: 401, message: 'Number already in use' }
       }
     }
-    
+
     const getUser = await accounts.getUserById({ id })
 
     if (getUser.length === 0) {
-      throw {code: 401, message: 'ID not registered'}
-    } 
+      throw { code: 401, message: 'ID not registered' }
+    }
 
     if (req.files && req.files.photo) {
       const file = req.files.photo
