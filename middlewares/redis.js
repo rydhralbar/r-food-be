@@ -9,43 +9,45 @@ const connect = new Redis({
 
 const useRedis = async (req, res, next) => {
   try {
-    const isPaginate = await connect.get('is_paginate')
-    const data = await connect.get('data')
-    const total = await connect.get('total')
-    const limit = await connect.get('limit')
-    const page = await connect.get('page')
-    const url = await connect.get('url')
-    const all_pagination = await connect.get("all_pagination")
-    const urlMatch = url === req.originalUrl
+    const { sort, typeSort, page, limit } = req.query
 
-    if (urlMatch && data) {
-      if (isPaginate) {
-        res.status(200).json({
-          redis: true,
-          status: true,
-          message: 'Retrieved successfully',
-          total: Number(total),
-          page: Number(page),
-          limit: Number(limit),
-          data: JSON.parse(data),
-          all_pagination: Number(all_pagination)
-        })
-      } else {
-        res.status(200).json({
-          redis: true,
-          status: true,
-          message: 'Retrieved successfully',
-          data: JSON.parse(data),
-        })
-      }
+    const data = await connect.get('data')
+    const url = await connect.get('url')
+    const sortRedis = await connect.get('sort')
+    const typeSortRedis = await connect.get('typeSort')
+    const pageRedis = await connect.get('page')
+    const limitRedis = await connect.get('limit')
+    const total_all_dataRedis = await connect.get('total_all_data')
+
+    const isMatch =
+      url === req.originalUrl &&
+      (sort ?? null) === sortRedis &&
+      (typeSort ?? null) === typeSortRedis &&
+      (page ?? null) === pageRedis &&
+      (limit ?? null) === limitRedis &&
+      data
+
+    if (isMatch) {
+      res.status(200).json({
+        status: true,
+        redis: true,
+        message: 'Data successfully retrieved!',
+        sort: sort,
+        typeSort: typeSort,
+        page: parseInt(page) ?? 1,
+        limit: parseInt(limit),
+        total_all_data: parseInt(total_all_dataRedis),
+        total: JSON.parse(data).length,
+        data: JSON.parse(data)
+      })
     } else {
       next()
     }
   } catch (error) {
-    res.status(error?.code ?? 500).json({
+    res.status(error?.statusCode ?? 500).json({
       status: false,
       message: error?.message ?? error,
-      data: [],
+      data: []
     })
   }
 }

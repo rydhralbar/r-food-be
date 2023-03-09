@@ -1,5 +1,8 @@
 const router = require('express').Router()
-const { validateCreateRecipe, validateEditRecipe } = require('../middlewares/validation.js')
+const {
+  validateCreateRecipe,
+  validateEditRecipe
+} = require('../middlewares/usersValidation.js')
 const userController = require('../controllers/recipes.js')
 
 // create recipe

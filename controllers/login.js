@@ -1,16 +1,16 @@
 require('dotenv').config()
 const bcrypt = require('bcrypt')
-const accounts = require('../models/accounts')
+const users = require('../models/users')
 const jwt = require('jsonwebtoken')
 
 const login = async (req, res) => {
   try {
     const { email, password } = req.body
 
-    const checkEmail = await accounts.getUserByEmail({ email })
+    const checkEmail = await users.getUserByEmail({ email })
 
     if (checkEmail?.length === 0) {
-      throw { code: 401, message: 'Unregistered email' }
+      throw { code: 400, message: 'Unregistered email' }
     }
 
     bcrypt.compare(password, checkEmail[0].password, (err, result) => {
@@ -21,23 +21,20 @@ const login = async (req, res) => {
 
         const token = jwt.sign(
           {
-            id: checkEmail[0]?.id,
-            name: checkEmail[0]?.name,
-            email: checkEmail[0]?.email,
-            iat: new Date().getTime(),
+            data: checkEmail[0]
           },
-          process.env.JWT_KEY,
-          // { expiresIn: '1d' }
+          process.env.JWT_KEY
+          // { expiresIn: '2h' }
         )
 
-        if (result) {
+        if (res) {
           res.status(200).json({
             status: true,
             message: 'Login successful',
             data: {
               token,
-              profile: checkEmail[0],
-            },
+              profile: checkEmail[0]
+            }
           })
         } else {
           throw { code: 400, message: 'Login failed, wrong password' }
@@ -46,7 +43,7 @@ const login = async (req, res) => {
         res.status(error?.code ?? 500).json({
           status: false,
           message: error?.message ?? error,
-          data: [],
+          data: []
         })
       }
     })
@@ -54,7 +51,7 @@ const login = async (req, res) => {
     res.status(500).json({
       status: false,
       message: error?.message ?? error,
-      data: [],
+      data: []
     })
   }
 }

@@ -1,5 +1,8 @@
 const router = require('express').Router()
-const { validateCreateVideo, validateEditVideo } = require('../middlewares/validation')
+const {
+  validateCreateVideo,
+  validateEditVideo
+} = require('../middlewares/usersValidation')
 const userController = require('../controllers/videosteps')
 
 // create video

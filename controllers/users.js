@@ -1,101 +1,78 @@
-const accounts = require('../models/accounts.js')
+const users = require('../models/users')
 const { v4: uuidv4 } = require('uuid')
 const path = require('path')
 // const helper = require('../helper')
 // const sharp = require('sharp')
 const bcrypt = require('bcrypt')
-const saltRounds = 10
 const { connect } = require('../middlewares/redis')
-const { cloudinary } = require('../helper')
+const { checkSizeUpload, checkExtensionFile } = require('../utils/uploadFile')
+const { uploadCloudinary, deleteCloudinary } = require('../utils/cloudinary')
+const { log } = require('console')
 
 const createUser = async (req, res) => {
   try {
     const { name, email, phone, password } = req.body
 
-    const checkEmail = await accounts.getUserByEmail({ email })
+    const saltRounds = 10
+
+    const checkEmail = await users.getUserByEmail({ email })
 
     if (checkEmail.length >= 1) {
-      throw { code: 401, message: 'Email already in use' }
+      throw { code: 409, message: 'Email already in use' }
     }
 
-    const checkPhone = await accounts.getUserByPhone({ phone })
+    const checkPhone = await users.getUserByPhone({ phone })
 
     if (checkPhone.length >= 1) {
-      throw { code: 401, message: 'Number already in use' }
+      throw { code: 409, message: 'Number already in use' }
     }
 
-    console.log(req.files.photo)
-    if (req.files && req.files.photo) {
-      const file = req.files.photo
-      // const fileName = `${uuidv4()}-${file.name}`
-      // const uploadPath = `${path.dirname(require.main.filename)}/public/${fileName}`
-      const mimeType = file.mimetype.split('/')[1]
-      const allowFile = ['jpeg', 'jpg', 'png', 'webp']
+    const hash = await bcrypt.hash(password, saltRounds)
+    if (!hash) {
+      throw { statusCode: 400, message: 'Authentication failed!' }
+    }
 
-      if (file.size > 1048576) {
-        throw new Error('File size too big, max 1mb')
-      }
+    let file = req.files?.photo
 
-      if (allowFile.find((item) => item === mimeType)) {
-        // Use the mv() method to place the file somewhere on your server
-        // file.mv(uploadPath, async function (err) {
-        // await sharp(file).jpeg({ quality: 20 }).toFile(uploadPath)
-        cloudinary.v2.uploader.upload(
-          file.tempFilePath,
-          { public_id: uuidv4() },
-          function (error, result) {
-            if (error) {
-              throw 'Photo upload failed'
-            }
-
-            bcrypt.hash(password, saltRounds, async (err, hash) => {
-              if (err) {
-                throw 'Authentication process failed, please try again'
-              }
-
-              const addToDb = await accounts.createNewUserPhoto({
-                name,
-                email,
-                phone,
-                password: hash,
-                // photo: `/images/${fileName}`
-                photo: result.url
-              })
-              res.json({
-                status: true,
-                message: 'Inserted successfully',
-                data: addToDb
-              })
-            })
-          }
-        )
-
-        // })
-      } else {
-        throw new Error('Upload failed, only photo format input')
-      }
-    } else {
-      bcrypt.hash(password, saltRounds, async (err, hash) => {
-        if (err) {
-          throw 'Authentication process failed, please try again'
+    if (file) {
+      const checkSize = checkSizeUpload(file)
+      if (!checkSize) {
+        throw {
+          statusCode: 400,
+          message: 'File upload is too large! only support < 1 MB'
         }
+      }
 
-        const addToDb2 = await accounts.createNewUser({
+      const allowedFile = checkExtensionFile(file)
+      if (!allowedFile) {
+        throw {
+          statusCode: 400,
+          message: `File is not support! format file must be image`
+        }
+      }
+
+      const uploadFile = await uploadCloudinary(file)
+      if (!uploadFile.success) {
+        throw { statusCode: 400, message: 'Upload file error!' }
+      } else {
+        await users.createNewUser({
           name,
           email,
           phone,
-          password: hash
+          password: hash,
+          photo: uploadFile.urlUpload
         })
-
-        res.json({
-          status: true,
-          message: 'Inserted successfully',
-          data: addToDb2
-        })
-      })
+      }
+    } else {
+      await users.createNewUser({ name, email, phone, password: hash })
     }
+
+    res.status(201).json({
+      status: true,
+      message: 'Register is successful!'
+    })
   } catch (error) {
-    res.status(error?.code ?? 500).json({
+    res.status(error?.statusCode ?? 500).json({
       status: false,
       message: error?.message ?? error,
       data: []
@@ -105,66 +82,44 @@ const createUser = async (req, res) => {
 
 const getUsers = async (req, res) => {
   try {
+    let statusCode = 200
+    let message
+    let dataUser = []
+    let url
+
     const { id } = req.params
-    const { sort, page, limit } = req.query
-
-    let getAllUser
-    // TO SORT BY NAME, WITH PAGINATION OR WITHOUT PAGINATION
-    if (sort === 'name_asc') {
-      getAllUser = await accounts.getUserSortAsc()
-    } else if (sort === 'name_desc') {
-      getAllUser = await accounts.getUserSortDesc()
-    } else if (page) {
-      getAllUser = await accounts.getUserPagin({ page, limit })
-    } else if (limit) {
-      getAllUser = await accounts.getUserLimit({ limit })
-    } else if (sort === 'id') {
-      getAllUser = await accounts.getUserSortId()
-    } else {
-      getAllUser = await accounts.getAllUser()
-    }
-
-    connect.set('url', req.originalUrl, 'ex', 10)
-    connect.set('data', JSON.stringify(getAllUser), 'ex', 10)
-    connect.set('total', getAllUser?.length, 'ex', 10)
-    connect.set('limit', limit, 'ex', 10)
-    connect.set('page', page, 'ex', 10)
-    connect.set('is_paginate', 'true', 'ex', 10)
-
-    // const totalUser = await accounts.getAllUser()
+    const { sort, typeSort, page, limit } = req.query
 
     if (id) {
-      const getSelectedUser = await accounts.getUserById({ id })
-
-      connect.set('url', req.originalUrl, 'ex', 10)
-      connect.set('data', JSON.stringify(getSelectedUser), 'ex', 10)
-      connect.set('is_paginate', null, 'ex', 10)
-
-      if (getSelectedUser.length > 0) {
-        res.status(200).json({
-          status: true,
-          message: 'Retrieved successfully',
-          data: getSelectedUser
-        })
-      } else {
-        throw new Error('Data is empty, please try again')
-      }
+      dataUser = await users.getUsers({ id })
     } else {
-      if (getAllUser.length > 0) {
-        res.status(200).json({
-          status: true,
-          message: 'Retrieved successfully',
-          total: getAllUser.length,
-          page: Number(page),
-          limit: Number(limit),
-          data: getAllUser
-        })
-      } else {
-        throw new Error('Data is empty, please try again')
-      }
+      dataUser = await users.getUsers({ sort, typeSort, page, limit })
     }
+
+    if (dataUser.length < 1) {
+      statusCode = 400
+      message = 'Data'
+    }
+
+    connect.set('url', req.originalUrl, 'ex', 15)
+    connect.set('data', JSON.stringify(dataUser), 'ex', 15)
+    if (sort) connect.set('sort', sort, 'ex', 15)
+    if (typeSort) connect.set('typeSort', typeSort, 'ex', 15)
+    if (page) connect.set('page', page ?? 1, 'ex', 15)
+    if (limit) connect.set('limit', limit, 'ex', 15)
+
+    res.status(statusCode ?? 200).json({
+      status: true,
+      message: message ?? 'Data retrieved successfully',
+      sort: sort ?? null,
+      typeSort: typeSort ?? null,
+      page: parseInt(page) ?? 1,
+      limit: parseInt(limit) ?? null,
+      total: dataUser.length,
+      data: dataUser
+    })
   } catch (error) {
-    res.status(500).json({
+    res.status(error?.statusCode ?? 500).json({
       status: false,
       message: error?.message ?? error,
       data: []
@@ -175,10 +130,18 @@ const getUsers = async (req, res) => {
 const editUser = async (req, res) => {
   try {
     const { id } = req.params
-    const { name, email, phone, password, photo } = req.body
+    const { name, email, phone, password } = req.body
+
+    const saltRounds = 10
+
+    const getUser = await users.getUserById({ id })
+
+    if (getUser.length === 0) {
+      throw { code: 401, message: 'ID not registered' }
+    }
 
     if (email) {
-      const checkEmail = await accounts.getEmailUser({ email })
+      const checkEmail = await users.getEmailUser({ email })
 
       if (checkEmail.length >= 1) {
         throw { code: 401, message: 'Email already in use' }
@@ -186,94 +149,70 @@ const editUser = async (req, res) => {
     }
 
     if (phone) {
-      const checkPhone = await accounts.getUserByPhone({ phone })
+      const checkPhone = await users.getUserByPhone({ phone })
       if (checkPhone.length >= 1) {
         throw { code: 401, message: 'Number already in use' }
       }
     }
 
-    const getUser = await accounts.getUserById({ id })
-
-    if (getUser.length === 0) {
-      throw { code: 401, message: 'ID not registered' }
+    if (password) {
+      const hash = bcrypt.hash(password, saltRounds)
+      if (!hash) {
+        throw { statusCode: 400, message: 'Authentication failed!' }
+      }
     }
 
-    if (req.files && req.files.photo) {
-      const file = req.files.photo
+    let file = req.files.photo
+    let filename = null
 
-      const mimeType = file.mimetype.split('/')[1]
-
-      const allowedFile = ['jpg', 'png', 'jpeg', 'webp']
-
-      if (allowedFile.find((item) => item === mimeType)) {
-        cloudinary.v2.uploader.upload(
-          file.tempFilePath,
-          { public_id: uuidv4() },
-          function (error, result) {
-            if (error) {
-              throw 'Photo upload failed'
-            }
-
-            bcrypt.genSalt(saltRounds, (err, salt) => {
-              bcrypt.hash(password, salt, async (err, hash) => {
-                if (err) {
-                  throw 'Authentication process failed, please try again'
-                }
-
-                const addToDbPhoto = await accounts.editUserPhoto({
-                  id,
-                  name,
-                  email,
-                  phone,
-                  password: hash,
-                  photo: result.url,
-                  getUser
-                })
-
-                res.json({
-                  status: true,
-                  message: 'User edited successful',
-                  data: addToDbPhoto
-                })
-              })
-            })
-          }
-        )
-      } else {
+    if (file) {
+      const checkSize = checkSizeUpload(file)
+      if (!checkSize) {
         throw {
-          code: 401,
-          message: 'Upload failed, only photo format input'
+          statusCode: 400,
+          message: 'File upload is too large! only support < 1 MB'
         }
       }
-    } else {
-      bcrypt.genSalt(saltRounds, (err, salt) => {
-        bcrypt.hash(password, salt, async (err, hash) => {
-          if (err) {
-            throw 'Authentication process failed, please try again'
-          }
 
-          const addToDb = await accounts.editUser({
-            id,
-            name,
-            email,
-            phone,
-            password: hash,
-            getUser
-          })
+      const allowedFile = checkExtensionFile(file)
+      if (!allowedFile) {
+        throw {
+          statusCode: 400,
+          message: `File is not support! format file must be image`
+        }
+      }
 
-          res.json({
-            status: true,
-            message: 'User edited successful',
-            data: addToDb
-          })
-        })
-      })
+      const uploadFile = await uploadCloudinary(file)
+      if (!uploadFile.success) {
+        throw { statusCode: 400, message: 'Upload file error!' }
+      } else {
+        filename = uploadFile.urlUpload
+      }
+
+      const deleteFile = await deleteCloudinary(getUser[0].photo)
+      if (!deleteFile.success) {
+        throw { statusCode: 400, message: 'Delete old file error!' }
+      }
     }
+
+    const updateData = await users.editUser({
+      id,
+      name: name ?? getUser[0]?.name,
+      email: email ?? getUser[0]?.email,
+      phone: phone ?? getUser[0]?.phone,
+      password: password ? hash : getUser[0]?.password,
+      photo: filename ?? getUser[0]?.photo
+    })
+
+    res.status(200).json({
+      status: true,
+      message: 'Data updated successfully !',
+      data: updateData
+    })
   } catch (error) {
-    res.status(500).json({
+    res.status(error?.statusCode ?? 500).json({
       status: false,
-      message: error?.message ?? error,
-      data: []
+      message: error?.message ?? error
     })
   }
 }
@@ -282,23 +221,27 @@ const deleteUser = async (req, res) => {
   try {
     const { id } = req.params
 
-    const checkId = await accounts.getUserById({ id })
+    const checkId = await users.getUserById({ id })
 
     if (checkId.length === 0) {
-      throw new Error({ code: 405, message: 'Data is empty' })
+      throw { statusCode: 400, message: 'Data is empty' }
+    } else {
+      const deleteImage = await deleteCloudinary(checkId[0].photo)
+      if (!deleteImage) {
+        throw { statusCode: 400, message: 'Failed to delete old photo' }
+      }
     }
 
-    await accounts.deleteUser({ id })
+    await users.deleteUser({ id })
 
-    res.json({
+    res.status(200).json({
       status: true,
-      message: 'Deleted successfully'
+      message: 'Data deleted successfully'
     })
   } catch (error) {
     res.status(error?.code ?? 500).json({
       status: false,
-      message: error?.message ?? error,
-      data: []
+      message: error?.message ?? error
     })
   }
 }

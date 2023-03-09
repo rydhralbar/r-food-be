@@ -1,5 +1,5 @@
 const express = require('express')
-const app = express() // initialization
+const app = express()
 const cors = require('cors')
 const bodyParser = require('body-parser')
 const port = 3001
@@ -8,28 +8,23 @@ const xss = require('xss-clean')
 const fileUpload = require('express-fileupload')
 const path = require('path')
 
-const userRoute = require('./routes/users.js')
-const recipeRoute = require('./routes/recipes.js')
-const commentRoute = require('./routes/comments.js')
-const videoRoute = require('./routes/videosteps')
-const authRoute = require('./routes/auth')
+const authRoutes = require('./routes/auth')
+const userRoutes = require('./routes/users')
+const recipeRoutes = require('./routes/recipes')
+const videoRoutes = require('./routes/recipeVideos')
 
-// parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }))
 
-// parse application/json
 app.use(bodyParser.json())
 
-// use cors
-app.use(cors()) // FOR ALL
+app.use(cors())
 
-// use helmet
 app.use(helmet())
 
-// use xss
 app.use(xss())
 
-// use middleware for grant access upload
+app.use('/static', express.static(path.join(__dirname, 'public')))
+
 app.use(
   fileUpload({
     useTempFiles: true,
@@ -37,20 +32,13 @@ app.use(
   })
 )
 
-// users route
-app.use('/users', userRoute)
+app.use('/auth', authRoutes)
 
-// recipes route
-app.use('/recipes', recipeRoute)
+app.use('/users', userRoutes)
 
-// comment route
-app.use('/recipes-comment', commentRoute)
+app.use('/recipes', recipeRoutes)
 
-// video step route
-app.use('/recipes-video', videoRoute)
-
-// user login
-app.use('/auth', authRoute)
+app.use('/recipe-videos', videoRoutes)
 
 app.get('/', (req, res) => {
   res.json({ status: true, message: 'Server running', version: '1.0' })
