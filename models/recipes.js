@@ -76,21 +76,27 @@ const deleteRecipe = async (params) => {
 const getRecipeSearchAsc = async (params) => {
   const { title } = params
 
-  return await db`SELECT * FROM food_recipe WHERE LOWER (title) LIKE LOWER (${'%' + title + '%'}) ORDER BY title ASC`
+  return await db`SELECT * FROM food_recipe WHERE LOWER (title) LIKE LOWER (${
+    '%' + title + '%'
+  }) ORDER BY title ASC`
 }
 
 // get searched recipe sort by title search
 const getRecipeSearchDesc = async (params) => {
   const { title } = params
 
-  return await db`SELECT * FROM food_recipe WHERE LOWER (title) LIKE LOWER (${'%' + title + '%'}) ORDER BY title DESC`
+  return await db`SELECT * FROM food_recipe WHERE LOWER (title) LIKE LOWER (${
+    '%' + title + '%'
+  }) ORDER BY title DESC`
 }
 
 // get searched recipe
 const getRecipeSearch = async (params) => {
   const { title } = params
 
-  return await db`SELECT * FROM food_recipe WHERE LOWER (title) LIKE LOWER (${'%' + title + '%'})`
+  return await db`SELECT * FROM food_recipe WHERE LOWER (title) LIKE LOWER (${
+    '%' + title + '%'
+  })`
 }
 
 const getRecipeSortId = async () => {

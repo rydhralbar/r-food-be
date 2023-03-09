@@ -8,6 +8,9 @@ router.post('', validateCreateRecipe, userController.createRecipe)
 // get recipes
 router.get('/:id?', userController.getRecipes)
 
+// get search recipes
+router.get('/search/:title', userController.getRecipeSearch)
+
 // edit recipe
 router.patch('/:id', validateEditRecipe, userController.editRecipe)
 

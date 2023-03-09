@@ -5,7 +5,7 @@ R Food is a website for uploading or watching interesting ways to cook home food
 
 ## Install
 
-how to install in yout local, you can clone this repo with
+how to install in your local, you can clone this repo with
 
 ``` git clone https://github.com/rydhralbar/r-food-be.git ```
 

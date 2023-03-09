@@ -24,11 +24,9 @@ const createUser = async (req, res) => {
       throw { code: 401, message: 'Number already in use' }
     }
     
-    // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
-    const file = req.files.photo
-    // console.log(file)
-
-    if(file){
+    console.log(req.files.photo)
+    if(req.files && req.files.photo){
+      const file = req.files.photo
       // const fileName = `${uuidv4()}-${file.name}`
       // const uploadPath = `${path.dirname(require.main.filename)}/public/${fileName}`
       const mimeType = file.mimetype.split('/')[1]
@@ -199,17 +197,81 @@ const editUser = async (req, res) => {
     
     const getUser = await accounts.getUserById({ id })
 
-    if (getUser.length === 1) {
-      // EDIT DATA AT account_user (name, email, phone, password, photo) VALUES ("")
-      await accounts.editUser({ id, name, email, phone, password, photo, getUser })
-    } else {
-      throw new Error('ID not registered')
-    }
+    if (getUser.length === 0) {
+      throw {code: 401, message: 'ID not registered'}
+    } 
 
-    res.json({
-      status: true,
-      message: 'Edited successfully'
-    })
+    if (req.files && req.files.photo) {
+      const file = req.files.photo
+
+      const mimeType = file.mimetype.split('/')[1]
+
+      const allowedFile = ['jpg', 'png', 'jpeg', 'webp']
+
+      if (allowedFile.find((item) => item === mimeType)) {
+        cloudinary.v2.uploader.upload(
+          file.tempFilePath,
+          { public_id: uuidv4() },
+          function (error, result) {
+            if (error) {
+              throw 'Photo upload failed'
+            }
+
+            bcrypt.genSalt(saltRounds, (err, salt) => {
+              bcrypt.hash(password, salt, async (err, hash) => {
+                if (err) {
+                  throw 'Authentication process failed, please try again'
+                }
+
+                const addToDbPhoto = await accounts.editUserPhoto({
+                  id,
+                  name,
+                  email,
+                  phone,
+                  password: hash,
+                  photo: result.url,
+                  getUser
+                })
+
+                res.json({
+                  status: true,
+                  message: 'User edited successful',
+                  data: addToDbPhoto
+                })
+              })
+            })
+          }
+        )
+      } else {
+        throw {
+          code: 401,
+          message: 'Upload failed, only photo format input'
+        }
+      }
+    } else {
+      bcrypt.genSalt(saltRounds, (err, salt) => {
+        bcrypt.hash(password, salt, async (err, hash) => {
+          if (err) {
+            throw 'Authentication process failed, please try again'
+          }
+
+          const addToDb = await accounts.editUser({
+            id,
+            name,
+            email,
+            phone,
+            password: hash,
+            getUser
+          })
+
+          res.json({
+            status: true,
+            message: 'User edited successful',
+            data: addToDb
+          })
+        })
+      })
+    }
   } catch (error) {
     res.status(500).json({
       status: false,

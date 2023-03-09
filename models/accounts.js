@@ -48,6 +48,18 @@ const getAllUser = async () => {
 
 // edit user data
 const editUser = async (params) => {
+  const { id, name, email, phone, password, getUser } = params
+
+  return await db`
+  UPDATE account_user SET
+  "name" = ${name || getUser[0]?.name},
+  "email" = ${email || getUser[0]?.email},
+  "phone" = ${phone || getUser[0]?.phone},
+  "password" = ${password || getUser[0]?.password}
+WHERE "id" = ${id};`
+}
+
+const editUserPhoto = async (params) => {
   const { id, name, email, phone, password, photo, getUser } = params
 
   return await db`
@@ -107,6 +119,7 @@ module.exports = {
   createNewUserPhoto,
   getAllUser,
   editUser,
+  editUserPhoto,
   getUserById,
   getUserSortAsc,
   deleteUser,
