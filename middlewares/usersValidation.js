@@ -1,4 +1,4 @@
-const { Validator, addCustomMessages } = require('node-input-validator')
+const { Validator } = require('node-input-validator')
 const jwt = require('jsonwebtoken')
 const db = require('../db')
 
@@ -35,7 +35,7 @@ const validateCreateUser = (req, res, next) => {
     name: 'required|regex:^[a-zA-Z_ ]+$|minLength:5|maxLength:50',
     email: 'required|email|minLength:5|maxLength:70|email',
     phone: 'required|phoneNumber|minLength:11|maxLength:14|phoneNumber',
-    password: 'required|minLength:8|alphaNumeric'
+    password: 'required|minLength:8|regex:[0-9]'
   })
 
   rules.check().then((success) => {
@@ -57,7 +57,10 @@ const validateCreateUser = (req, res, next) => {
 
 const validateEditUser = (req, res, next) => {
   const rules = new Validator(req.body, {
-    name: 'minLength:5|maxLength:40|required'
+    name: 'minLength:5|maxLength:40',
+    email: 'email|minLength:5|maxLength:70|email',
+    phone: 'phoneNumber|minLength:11|maxLength:14|phoneNumber',
+    password: 'minLength:8|alphaNumeric'
   })
 
   rules.check().then((success) => {
@@ -71,26 +74,6 @@ const validateEditUser = (req, res, next) => {
           rules.errors?.email?.message ??
           rules.errors?.phone?.message ??
           rules.errors?.password?.message,
-        data: []
-      })
-    }
-  })
-}
-
-const validateCreateRecipe = (req, res, next) => {
-  const rules = new Validator(req.body, {
-    photo: 'url',
-    title: 'required|minLength:3|maxLength:70',
-    ingredients: 'required|minLength:3'
-  })
-
-  rules.check().then(function (success) {
-    if (success) {
-      next()
-    } else {
-      res.status(400).json({
-        status: false,
-        message: rules.errors,
         data: []
       })
     }
@@ -227,7 +210,6 @@ module.exports = {
   validateUser,
   validateCreateUser,
   validateEditUser,
-  validateCreateRecipe,
   validateEditRecipe,
   validateCreateComment,
   validateEditComment,

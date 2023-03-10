@@ -1,26 +1,35 @@
 const router = require('express').Router()
 const {
   validateCreateRecipe,
-  validateEditRecipe
-} = require('../middlewares/usersValidation.js')
-const userController = require('../controllers/recipes.js')
+  validateSearchRecipe,
+  validateUser
+} = require('../middlewares/recipesValidation.js')
+const recipeController = require('../controllers/recipes.js')
+const { validateToken } = require('../middlewares/webtoken')
+const { useRedis } = require('../middlewares/redis.js')
 
-// create recipe
-router.post('/add', validateCreateRecipe, userController.createRecipe)
+router.post(
+  '/add',
+  validateToken,
+  validateCreateRecipe,
+  recipeController.createRecipe
+)
 
-// get recipes
-router.get('/:id?', userController.getRecipes)
+router.get('/:id?', useRedis, recipeController.getRecipes)
 
-// get search recipes
-router.get('/search/:title', userController.getRecipeSearch)
+router.get(
+  '/search/by',
+  validateSearchRecipe,
+  recipeController.getSearchedRecipes
+)
 
-// edit recipe
-router.patch('/:id', validateEditRecipe, userController.editRecipe)
+router.patch('/:id', validateToken, validateUser, recipeController.editRecipe)
 
-// delete recipe
-router.delete('/:id', userController.deleteRecipe)
-
-// get searched recipes
-router.get('/search/name', userController.getRecipeSearch)
+router.delete(
+  '/:id',
+  validateToken,
+  validateUser,
+  recipeController.deleteRecipe
+)
 
 module.exports = router

@@ -1,68 +1,97 @@
-const recipes = require('../models/recipes.js')
+const recipes = require('../models/recipes')
+const users = require('../models/users')
+const recipeVideos = require('../models/recipeVideos')
 // const db = require('../db') // import dari file ./db.js
 // const { cloudinary } = require('../helper')
+const { connect } = require('../middlewares/redis')
 const { v4: uuidv4 } = require('uuid')
+const { decodeToken } = require('../utils/jwtToken')
+const { uploadCloudinary, deleteCloudinary } = require('../utils/cloudinary')
+const { checkSizeUpload, checkExtensionFile } = require('../utils/uploadFile')
 
-// create recipe
 const createRecipe = async (req, res) => {
   try {
-    const { title, ingredients, slug } = req.body
+    const { title, ingredients, video, description } = req.body
 
-    console.log(req.files.photo)
+    const { authorization } = req.headers
 
-    if (req.files && req.files.photo) {
-      const file = req.files.photo
-      // const fileName = `${uuidv4()}-${file.name}`
-      // const uploadPath = `${path.dirname(require.main.filename)}/public/${fileName}`
-      const mimeType = file.mimetype.split('/')[1]
-      const allowFile = ['jpeg', 'jpg', 'png', 'webp']
+    const decoded = decodeToken(authorization)
 
-      if (file.size > 1048576) {
-        throw new Error('File size too big, max 1mb')
+    const userIdToken = decoded?.data?.id
+
+    const checkUser = await users.getUsers({ id: userIdToken })
+
+    if (checkUser.length === 0) {
+      throw {
+        statusCode: 400,
+        message: `User with id ${userIdToken} does not exist`
+      }
+    }
+
+    const checkRecipe = await recipes.getRecipes({ title })
+
+    if (checkRecipe.length > 0) {
+      throw {
+        statusCode: 400,
+        message: `A recipe with the title ${title} already exists`
+      }
+    }
+
+    let file = req.files.photo
+
+    if (file) {
+      const checkSize = checkSizeUpload(file)
+      if (!checkSize) {
+        throw {
+          statusCode: 400,
+          message: 'File upload is too large! only support < 1 MB'
+        }
       }
 
-      if (allowFile.find((item) => item === mimeType)) {
-        // file.mv(uploadPath, async function (err) {
-        // await sharp(file).jpeg({ quality: 20 }).toFile(uploadPath)
-        cloudinary.v2.uploader.upload(
-          file.tempFilePath,
-          { public_id: uuidv4() },
-          function (error, result) {
-            if (error) {
-              throw 'Photo upload failed'
-            }
+      const allowedFile = checkExtensionFile(file)
+      if (!allowedFile) {
+        throw {
+          statusCode: 400,
+          message: `File is not support! format file must be image`
+        }
+      }
 
-            const addToDb = recipes.createNewRecipePhoto({
-              title,
-              photo: result.url,
-              ingredients,
-              slug
-            })
-            res.json({
-              status: true,
-              message: 'Inserted successfully',
-              data: addToDb
-            })
-          }
-        )
-
-        // })
+      const uploadFile = await uploadCloudinary(file)
+      if (!uploadFile.success) {
+        throw { statusCode: 400, message: 'Upload file error!' }
       } else {
-        throw new Error('Upload failed, only photo format input')
+        const data = await recipes.createNewRecipe({
+          userId: userIdToken,
+          photo: uploadFile.urlUpload,
+          title,
+          ingredients,
+          description
+        })
+
+        let videos
+        const id = data[0].id
+        if (Array.isArray(video)) {
+          videos = video.map((item) => {
+            return { recipe_id: id, video: item }
+          })
+        } else {
+          videos = { recipe_id: id, video: video }
+        }
+
+        await recipeVideos.createVideo({ videos })
       }
     } else {
-      const addToDb2 = await recipes.createNewRecipe({
-        title,
-        ingredients,
-        slug
-      })
-
-      res.json({
-        status: true,
-        message: 'Inserted successfully',
-        data: addToDb2
-      })
+      throw {
+        statusCode: 400,
+        message: `Photo must be required!`
+      }
     }
+
+    res.status(200).json({
+      status: true,
+      message: 'Recipe added successful!',
+      data: []
+    })
   } catch (error) {
     res.status(error?.code ?? 500).json({
       status: false,
@@ -72,69 +101,55 @@ const createRecipe = async (req, res) => {
   }
 }
 
-// get recipes
 const getRecipes = async (req, res) => {
   try {
+    const statusCode = 200
+    let message
+    let recipesData = []
+
     const { id } = req.params
-    const { sort, page, limit, sortType } = req.query
-
-    let getAllRecipe
-    let getCountRecipe
-
-    getCountRecipe = await recipes.getCountRecipe()
-
-    // TO SORT BY NAME AND SORT BY DATE
-    if (sort === 'title_asc') {
-      getAllRecipe = await recipes.getRecipeSortNameAsc()
-    } else if (sort === 'created_at_asc') {
-      getAllRecipe = await recipes.getRecipeSortCreatedAsc()
-    } else if (sort === 'title_desc') {
-      getAllRecipe = await recipes.getRecipeSortNameDesc()
-    } else if (sort === 'created_at_desc') {
-      getAllRecipe = await recipes.getRecipeSortCreatedDesc()
-    } else if (sort === 'id') {
-      getAllRecipe = await recipes.getRecipeSortId()
-    } else if (page && limit) {
-      getAllRecipe = await recipes.getRecipePagin({ page, limit })
-    } else {
-      getAllRecipe = await recipes.getAllRecipes()
-    }
-
-    // connect.set('url', req.originalUrl, 'ex', 10)
-    // connect.set('data', JSON.stringify(getAllRecipe), 'ex', 10)
-    // connect.set('total', getAllRecipe?.length, 'ex', 10)
-    // connect.set('limit', limit, 'ex', 10)
-    // connect.set('page', page, 'ex', 10)
-    // connect.set('is_paginate', 'true', 'ex', 10)
-    // connect.set('all_pagination', getCountRecipe, 'ex', 10)
+    const { userId, limit, page, sort, typeSort } = req.query // ?limit=&page=&sort=&typeSort=
 
     if (id) {
-      const getSelectedRecipe = await recipes.getRecipeById({ id })
-
-      if (getSelectedRecipe.length > 0) {
-        res.status(200).json({
-          status: true,
-          message: 'Retrieved successfully',
-          data: getSelectedRecipe
-        })
-      } else {
-        throw new Error('Data is empty, please try again')
-      }
+      recipesData = await recipes.getRecipes({ id })
+    } else if (userId) {
+      recipesData = await recipes.getRecipes({
+        userId,
+        limit,
+        page,
+        sort,
+        typeSort
+      })
     } else {
-      if (getAllRecipe.length > 0) {
-        res.status(200).json({
-          status: true,
-          message: 'Retrieved successfully',
-          total: getAllRecipe.length,
-          page: Number(page),
-          limit: Number(limit),
-          data: getAllRecipe,
-          all_pagination: getCountRecipe
-        })
-      } else {
-        throw new Error('Data is empty, please try again')
-      }
+      recipesData = await recipes.getRecipes({ limit, page, sort, typeSort })
     }
+
+    if (recipesData.length < 1) {
+      statusCode = 400
+      message = 'Data not found!'
+    }
+
+    const total_all_data = recipesData?.[0]?.total_recipes ?? 0
+
+    connect.set('url', req.originalUrl, 'ex', 15)
+    connect.set('data', JSON.stringify(recipesData), 'ex', 15)
+    if (sort) connect.set('sort', sort, 'ex', 15)
+    if (typeSort) connect.set('typeSort', typeSort, 'ex', 15)
+    if (page) connect.set('page', page ?? 1, 'ex', 15)
+    if (limit) connect.set('limit', limit, 'ex', 15)
+    if (total_all_data) connect.set('total_all_data', total_all_data, 'ex', 15)
+
+    res.status(statusCode ?? 200).json({
+      status: true,
+      message: message ?? 'Data retrieved successfully !',
+      sort: sort ?? null,
+      typeSort: typeSort ?? null,
+      page: parseInt(page) ?? 1,
+      limit: parseInt(limit) ?? null,
+      total: recipesData.length,
+      total_all_data: total_all_data,
+      data: recipesData
+    })
   } catch (error) {
     res.status(500).json({
       status: false,
@@ -144,28 +159,113 @@ const getRecipes = async (req, res) => {
   }
 }
 
-// edit recipe
+const getSearchedRecipes = async (req, res) => {
+  try {
+    const { searchBy, keyword, page, limit, sort, typeSort } = req.query
+
+    console.log('berjalan search')
+
+    const getData = await recipes.getSearchedRecipes({
+      searchBy,
+      keyword,
+      page,
+      limit,
+      sort,
+      typeSort
+    })
+
+    totalData = getData.length
+    if (totalData < 1) {
+      throw { statusCode: 400, message: 'Data not found!' }
+    }
+
+    res.status(200).json({
+      status: true,
+      message: 'Data retrieved successfully!',
+      searchBy,
+      keyword,
+      limit,
+      page,
+      total: totalData,
+      total_all_data: getData?.[0]?.total_recipes ?? 0,
+      data: getData
+    })
+  } catch (error) {
+    console.log(error)
+    res.status(error?.statusCode ?? 500).json({
+      status: false,
+      message: error?.message ?? error
+    })
+  }
+}
+
 const editRecipe = async (req, res) => {
   try {
     const { id } = req.params
-    const { photo, title, ingredients } = req.body
-    let getRecipes
-    const checkId = await recipes.checkId({ id })
+    const { title, description, ingredients } = req.body
+    const { authorization } = req.headers
 
-    if (checkId.length >= 1) {
-      getRecipes = await recipes.getRecipeById({ id })
+    const decoded = decodeToken(authorization)
+
+    const userIdToken = decoded?.data?.id
+
+    const checkUsers = await users.getUsers({ id: userIdToken })
+    if (checkUsers.length < 1) {
+      throw { statusCode: 400, message: 'User doesnt exist!' }
     }
 
-    if (getRecipes) {
-      // EDIT DATA AT food_recipe (photo, title, ingredients) VALUES ("")
-      await recipes.editRecipe({ id, photo, title, ingredients, getRecipes })
-    } else {
-      throw new Error('ID not registered')
+    const getRecipes = await recipes.getRecipes({ id })
+    if (getRecipes.length < 1) {
+      throw { statusCode: 400, message: 'Data not found, please try again!' }
     }
 
-    res.json({
+    let filename = null
+
+    if (req.files !== null && req.files.photo !== null) {
+      let file = req.files.photo
+      const checkSize = checkSizeUpload(file)
+      if (!checkSize) {
+        throw {
+          statusCode: 400,
+          message: 'File upload is too large! only support < 1 MB'
+        }
+      }
+
+      const allowedFile = checkExtensionFile(file)
+      if (!allowedFile) {
+        throw {
+          statusCode: 400,
+          message: `File is not support! format file must be image`
+        }
+      }
+
+      const uploadFile = await uploadCloudinary(file)
+      if (!uploadFile.success) {
+        throw { statusCode: 400, message: 'Upload file error!' }
+      } else {
+        filename = uploadFile.urlUpload
+      }
+
+      const deleteFile = await deleteCloudinary(getRecipes[0]?.photo)
+      if (!deleteFile.success) {
+        throw { statusCode: 400, message: 'Delete old file error!' }
+      }
+    }
+
+    const updateData = await recipes.editRecipe({
+      id,
+      title: title !== '' ? title : getRecipes[0]?.title,
+      description:
+        description !== '' ? description : getRecipes[0]?.description,
+      ingredients:
+        ingredients !== '' ? ingredients : getRecipes[0]?.ingredients,
+      photo: filename !== null ? filename : getRecipes[0]?.photo
+    })
+
+    res.status(200).json({
       status: true,
-      message: 'Edited successfully'
+      message: 'Data updated successful !',
+      data: updateData[0]
     })
   } catch (error) {
     res.status(500).json({
@@ -181,15 +281,22 @@ const deleteRecipe = async (req, res) => {
   try {
     const { id } = req.params
 
-    const checkId = await recipes.getRecipeById({ id })
+    const checkId = await recipes.getRecipes({ id })
+
+    console.log(checkId)
 
     if (checkId.length === 0) {
-      throw new Error('Data is empty')
+      throw { statusCode: 400, message: 'Data is empty' }
+    } else {
+      const deleteFile = await deleteCloudinary(checkId[0].photo)
+      if (!deleteFile.success) {
+        throw { statusCode: 400, message: 'Delete old photo error!' }
+      }
     }
 
     await recipes.deleteRecipe({ id })
 
-    res.json({
+    res.status(200).json({
       status: true,
       message: 'Deleted successfully'
     })
@@ -202,46 +309,10 @@ const deleteRecipe = async (req, res) => {
   }
 }
 
-// get search recipe
-const getRecipeSearch = async (req, res) => {
-  try {
-    const { title } = req.params
-    const { sort } = req.query // STILL TROUBLE
-
-    // console.log(`SELECT * FROM food_recipe WHERE title LIKE '%${title}%'`)
-
-    let getSearchedRecipe
-    if (sort === 'asc') {
-      getSearchedRecipe = await recipes.getRecipeSearchAsc({ title })
-    } else if (sort === 'desc') {
-      getSearchedRecipe = await recipes.getRecipeSearchDesc({ title })
-    } else {
-      getSearchedRecipe = await recipes.getRecipeSearch({ title })
-    }
-
-    if (getSearchedRecipe.length > 0) {
-      res.status(200).json({
-        status: true,
-        message: 'Retrieved successfully',
-        total: getSearchedRecipe.length,
-        data: getSearchedRecipe
-      })
-    } else {
-      throw new Error({ code: 405, message: 'Data is empty, please' })
-    }
-  } catch (error) {
-    res.status(error?.code ?? 500).json({
-      status: false,
-      message: error?.message ?? error,
-      data: []
-    })
-  }
-}
-
 module.exports = {
   createRecipe,
   getRecipes,
+  getSearchedRecipes,
   editRecipe,
-  deleteRecipe,
-  getRecipeSearch
+  deleteRecipe
 }

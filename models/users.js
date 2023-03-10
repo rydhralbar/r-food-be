@@ -43,7 +43,6 @@ const getEmailUser = async (params) => {
   return await db`SELECT email FROM users WHERE email = ${email}`
 }
 
-// get user from db
 const getUsers = async (params) => {
   const { id, email, limit, page, sort, typeSort } = params
 
@@ -51,12 +50,10 @@ const getUsers = async (params) => {
     return await db`SELECT * FROM users WHERE id = ${id}`
   }
 
-  // get data by email
   if (email) {
     return await db`SELECT * FROM users WHERE email = ${email}`
   }
 
-  // get all data with sort
   if (sort) {
     return typeSort && typeSort === 'desc'
       ? await db`SELECT * FROM users ORDER BY ${db(sort)} DESC LIMIT ${

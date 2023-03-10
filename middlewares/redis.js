@@ -19,7 +19,7 @@ const useRedis = async (req, res, next) => {
     const limitRedis = await connect.get('limit')
     const total_all_dataRedis = await connect.get('total_all_data')
 
-    const isMatch =
+    const isSame =
       url === req.originalUrl &&
       (sort ?? null) === sortRedis &&
       (typeSort ?? null) === typeSortRedis &&
@@ -27,11 +27,11 @@ const useRedis = async (req, res, next) => {
       (limit ?? null) === limitRedis &&
       data
 
-    if (isMatch) {
+    if (isSame) {
       res.status(200).json({
-        status: true,
         redis: true,
-        message: 'Data successfully retrieved!',
+        status: true,
+        message: 'Data retrieved successfully !',
         sort: sort,
         typeSort: typeSort,
         page: parseInt(page) ?? 1,

@@ -9,6 +9,8 @@ const login = async (req, res) => {
 
     const checkEmail = await users.getUserByEmail({ email })
 
+    console.log(checkEmail)
+
     if (checkEmail?.length === 0) {
       throw { code: 400, message: 'Unregistered email' }
     }

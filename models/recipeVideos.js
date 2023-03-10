@@ -1,11 +1,8 @@
 const db = require('../db') // import dari file ./db.js
 
 const createVideo = async (params) => {
-  const { videoStep1, videoStep2, videoStep3, recipeId } = params
-
-  return await db`INSERT INTO video_step_recipe (video_step1, video_step2, video_step3, recipeId) 
-  VALUES (${videoStep1}, ${videoStep2}, ${videoStep3}, ${recipeId})
-`
+  const { videos } = params
+  return await db`INSERT INTO recipe_videos ${db(videos, 'recipe_id', 'video')}`
 }
 
 const getVideoById = async (params) => {
@@ -14,8 +11,10 @@ const getVideoById = async (params) => {
   return await db`SELECT * FROM video_step_recipe WHERE id = ${id}`
 }
 
-const getVideos = async () => {
-  return await db`SELECT * FROM video_step_recipe`
+const getVideos = async (params) => {
+  const { recipeId } = params
+
+  return await db`SELECT * FROM recipe_videos WHERE recipe_id = ${recipeId}`
 }
 
 const checkRecipeId = async (params) => {
@@ -25,7 +24,16 @@ const checkRecipeId = async (params) => {
 }
 
 const editVideo = async (params) => {
-  const { id, videoStep1, videoStep2, videoStep3, videoStep4, videoStep5, getVideos, recipeId } = params
+  const {
+    id,
+    videoStep1,
+    videoStep2,
+    videoStep3,
+    videoStep4,
+    videoStep5,
+    getVideos,
+    recipeId
+  } = params
 
   return await db`
         UPDATE video_step_recipe SET
@@ -40,9 +48,9 @@ const editVideo = async (params) => {
 }
 
 const deleteVideo = async (params) => {
-  const { id } = params
+  const { recipeId } = params
 
-  return await db`DELETE FROM "public"."video_step_recipe" WHERE "id" = ${id}`
+  return await db`DELETE FROM recipe_videos WHERE recipe_id = ${recipeId}`
 }
 
 const getSortVideoId = async () => {
@@ -55,4 +63,13 @@ const checkVideoId = async (params) => {
   return await db`SELECT id FROM video_step_recipe WHERE id = ${id}`
 }
 
-module.exports = { createVideo, getVideoById, getVideos, checkRecipeId, editVideo, deleteVideo, getSortVideoId, checkVideoId }
+module.exports = {
+  createVideo,
+  getVideoById,
+  getVideos,
+  checkRecipeId,
+  editVideo,
+  deleteVideo,
+  getSortVideoId,
+  checkVideoId
+}

@@ -1,4 +1,4 @@
-const videos = require('../models/videosteps.js')
+const videos = require('../models/recipeVideos.js')
 
 const createVideo = async (req, res) => {
   try {
@@ -10,7 +10,12 @@ const createVideo = async (req, res) => {
       throw new Error({ code: 401, message: 'Recipe ID not registered' })
     }
     // INSERT INTO videoStep_recipe (videoStep1, videoStep2, videoStep3, videoStep4) VALUES ("")
-    const addToDb = await videos.createVideo({ videoStep1, videoStep2, videoStep3, recipeId })
+    const addToDb = await videos.createVideo({
+      videoStep1,
+      videoStep2,
+      videoStep3,
+      recipeId
+    })
 
     res.json({
       status: true,
@@ -74,7 +79,14 @@ const getVideo = async (req, res) => {
 const editVideo = async (req, res) => {
   try {
     const { id } = req.params
-    const { videoStep1, videoStep2, videoStep3, videoStep4, videoStep5, recipeId } = req.body
+    const {
+      videoStep1,
+      videoStep2,
+      videoStep3,
+      videoStep4,
+      videoStep5,
+      recipeId
+    } = req.body
 
     const checkVideoId = await videos.checkVideoId({ id })
 
@@ -94,7 +106,16 @@ const editVideo = async (req, res) => {
 
     if (getVideos) {
       // EDIT DATA AT videoStep_recipe (videoStep1, videoStep2, videoStep3) VALUES ("")
-      await videos.editVideo({ id, videoStep1, videoStep2, videoStep3, videoStep4, videoStep5, getVideos, recipeId })
+      await videos.editVideo({
+        id,
+        videoStep1,
+        videoStep2,
+        videoStep3,
+        videoStep4,
+        videoStep5,
+        getVideos,
+        recipeId
+      })
     } else {
       throw new Error('ID not registered')
     }

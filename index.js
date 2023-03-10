@@ -44,7 +44,6 @@ app.get('/', (req, res) => {
   res.json({ status: true, message: 'Server running', version: '1.0' })
 })
 
-// running express
 app.listen(port, () => {
   console.log(`R-Food App listening on port ${port}`)
 })

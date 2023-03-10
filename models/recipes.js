@@ -1,44 +1,120 @@
-const db = require('../db') // import from file db.js
+const db = require('../db')
 
-// create recipe to db
+const createdAt = new Date()
+const updatedAt = new Date()
+
 const createNewRecipe = async (params) => {
-  const { title, ingredients, slug } = params
-
-  return await db`
-     INSERT INTO food_recipe (title, ingredients, slug) 
-     VALUES (${title}, ${ingredients}, ${slug})
-   `
+  const { userId, title, description, ingredients, photo } = params
+  return await db`INSERT INTO recipes (user_id, title, description, ingredients, photo, created_at, updated_at) VALUES(${userId}, ${title}, ${description}, ${ingredients}, ${photo}, ${createdAt}, ${updatedAt}) RETURNING id`
 }
 
-const createNewRecipePhoto = async (params) => {
-  const { title, photo, ingredients, slug } = params
+const getRecipes = async (params) => {
+  const { title, id, userId, limit, page, sort, typeSort } = params
 
-  return await db`
-  INSERT INTO food_recipe (title, photo, ingredients, slug) 
-  VALUES (${title}, ${photo}, ${ingredients}, ${slug})
-`
+  if (title) {
+    return await db`SELECT * FROM recipes WHERE title = ${title}`
+  }
+
+  if (id) {
+    return await db`SELECT recipes.*, users.name as user_name, users.email as user_email FROM recipes LEFT JOIN users ON users.id = recipes.user_id WHERE recipes.id = ${id}`
+  }
+
+  if (userId) {
+    if (sort) {
+      return typeSort && typeSort === 'desc'
+        ? await db`SELECT (
+      SELECT COUNT(*)
+      FROM   recipes
+      ) AS total_recipes, recipes.*, users.name as user_name, users.email as user_email FROM recipes LEFT JOIN users ON users.id = recipes.user_id WHERE recipes.user_id = ${userId} ORDER BY ${db(
+            sort
+          )} DESC LIMIT ${limit ?? null} OFFSET ${
+            page ? limit * (page - 1) : 0
+          }`
+        : await db`SELECT (
+      SELECT COUNT(*)
+      FROM   recipes
+      ) AS total_recipes, recipes.*, users.name as user_name, users.email as user_email FROM recipes LEFT JOIN users ON users.id = recipes.user_id WHERE recipes.user_id = ${userId} ORDER BY ${db(
+            sort
+          )} ASC LIMIT ${limit ?? null} OFFSET ${page ? limit * (page - 1) : 0}`
+    } else {
+      // get all data without sort
+      return await db`SELECT (
+      SELECT COUNT(*)
+      FROM   recipes
+      ) AS total_recipes, recipes.*, users.name as user_name, users.email as user_email FROM recipes LEFT JOIN users ON users.id = recipes.user_id WHERE recipes.user_id = ${userId} LIMIT ${
+        limit ?? null
+      } OFFSET ${page ? limit * (page - 1) : 0}`
+    }
+  }
+
+  // get all data with sort
+  if (sort) {
+    return typeSort && typeSort === 'desc'
+      ? await db`SELECT (
+      SELECT COUNT(*)
+      FROM recipes
+      ) AS total_recipes, recipes.*, users.name as user_name, users.email as user_email FROM recipes LEFT JOIN users ON users.id = recipes.user_id ORDER BY recipes.${db(
+        sort
+      )} DESC LIMIT ${limit ?? null} OFFSET ${page ? limit * (page - 1) : 0}`
+      : await db`SELECT (
+      SELECT COUNT(*)
+      FROM   recipes
+      ) AS total_recipes, recipes.*, users.name as user_name, users.email as user_email FROM recipes LEFT JOIN users ON users.id = recipes.user_id ORDER BY recipes.${db(
+        sort
+      )} ASC LIMIT ${limit ?? null} OFFSET ${page ? limit * (page - 1) : 0}`
+  } else {
+    return await db`SELECT (
+      SELECT COUNT(*)
+      FROM   recipes
+      ) AS total_recipes, recipes.*, users.name as user_name, users.email as user_email FROM recipes LEFT JOIN users ON users.id = recipes.user_id LIMIT ${
+        limit ?? null
+      } OFFSET ${page ? limit * (page - 1) : 0}`
+  }
 }
 
-// get recipe from db
-const getAllRecipes = async () => {
-  return await db`
-     SELECT * FROM food_recipe`
+const getSearchedRecipes = async (params) => {
+  const { searchBy, keyword, limit, page, sort, typeSort } = params
+  if (sort) {
+    return typeSort && typeSort === 'desc'
+      ? await db`SELECT (
+        SELECT COUNT(*)
+        FROM recipes WHERE ${db(`recipes.${searchBy}`)} ILIKE ${
+          '%' + keyword + '%'
+        }
+        ) AS total_recipes, recipes.*, users.name as user_name, users.email as user_email FROM recipes LEFT JOIN users ON users.id = recipes.user_id WHERE ${db(
+          `recipes.${searchBy}`
+        )} ILIKE ${'%' + keyword + '%'} ORDER BY ${db(sort)} DESC LIMIT ${
+          limit ?? null
+        } OFFSET ${page ? limit * (page - 1) : 0}`
+      : await db`SELECT (
+        SELECT COUNT(*)
+        FROM recipes WHERE ${db(`recipes.${searchBy}`)} ILIKE ${
+          '%' + keyword + '%'
+        }
+        ) AS total_recipes, recipes.*, users.name as user_name, users.email as user_email FROM recipes LEFT JOIN users ON users.id = recipes.user_id WHERE ${db(
+          `recipes.${searchBy}`
+        )} ILIKE ${'%' + keyword + '%'} ORDER BY ${db(sort)} ASC LIMIT ${
+          limit ?? null
+        } OFFSET ${page ? limit * (page - 1) : 0}`
+  } else {
+    return await db`SELECT (
+      SELECT COUNT(*)
+      FROM recipes WHERE ${db(`recipes.${searchBy}`)} ILIKE ${
+      '%' + keyword + '%'
+    }
+      ) AS total_recipes, recipes.*, users.name as user_name, users.email as user_email FROM recipes LEFT JOIN users ON users.id = recipes.user_id WHERE ${db(
+        `recipes.${searchBy}`
+      )} ILIKE ${'%' + keyword + '%'} LIMIT ${limit ?? null} OFFSET ${
+      page ? limit * (page - 1) : 0
+    }`
+  }
 }
 
-// edit recipe data
 const editRecipe = async (params) => {
-  const { id, photo, title, ingredients, getRecipes } = params
-
-  return await db`
-  UPDATE food_recipe SET
-    "photo" = ${photo || getRecipes[0]?.photo},
-    "title" = ${title || getRecipes[0]?.title},
-    "ingredients" = ${ingredients || getRecipes[0]?.ingredients}
-    WHERE "id" = ${id};
-`
+  const { id, title, description, ingredients, photo } = params
+  return await db`UPDATE recipes SET "title"=${title}, "description"=${description}, "ingredients"=${ingredients}, "photo"=${photo}, "updated_at"=${updatedAt} WHERE id=${id} RETURNING *`
 }
 
-// get recipe by id
 const getRecipeById = async (params) => {
   const { id } = params
 
@@ -55,47 +131,18 @@ const getRecipePagin = async (params) => {
   }`
 }
 
-// const getPaginLimit = async (params) => {
-//   const { limit } = params
-
-//   return await db`SELECT * FROM food_recipe LIMIT ${limit}`
-// }
-
-// check recipe id
 const checkId = async (params) => {
   const { id } = params
 
   return await db`SELECT id FROM food_recipe WHERE id = ${id}`
 }
 
-// get recipe sort name by asc
-const getRecipeSortNameAsc = async () => {
-  return await db`SELECT * FROM food_recipe ORDER BY title ASC`
-}
-
-// get recipe sort name by desc
-const getRecipeSortNameDesc = async () => {
-  return await db`SELECT * FROM food_recipe ORDER BY title DESC`
-}
-
-// get recipe sort created at by asc
-const getRecipeSortCreatedAsc = async () => {
-  return await db`SELECT * FROM food_recipe ORDER BY created_at ASC`
-}
-
-// get recipe sort created at by desc
-const getRecipeSortCreatedDesc = async () => {
-  return await db`SELECT * FROM food_recipe ORDER BY created_at DESC`
-}
-
-// delete recipe
 const deleteRecipe = async (params) => {
   const { id } = params
 
-  return await db`DELETE FROM "public"."food_recipe" WHERE "id" = ${id}`
+  return await db`DELETE FROM recipes WHERE id=${id}`
 }
 
-// get searched recipe sort by title search
 const getRecipeSearchAsc = async (params) => {
   const { title } = params
 
@@ -114,13 +161,6 @@ const getRecipeSearchDesc = async (params) => {
 }
 
 // get searched recipe
-const getRecipeSearch = async (params) => {
-  const { title } = params
-
-  return await db`SELECT * FROM food_recipe WHERE title ILIKE ${
-    '%' + title + '%'
-  }`
-}
 
 const getRecipeSortId = async () => {
   return await db`SELECT * FROM food_recipe ORDER BY id ASC`
@@ -132,18 +172,13 @@ const getCountRecipe = async () => {
 
 module.exports = {
   createNewRecipe,
-  createNewRecipePhoto,
-  getAllRecipes,
+  getRecipes,
+  getSearchedRecipes,
   editRecipe,
   getRecipeById,
-  getRecipeSortNameAsc,
-  getRecipeSortNameDesc,
-  getRecipeSortCreatedAsc,
-  getRecipeSortCreatedDesc,
   deleteRecipe,
   getRecipeSearchAsc,
   getRecipeSearchDesc,
-  getRecipeSearch,
   getRecipeSortId,
   checkId,
   getRecipePagin,

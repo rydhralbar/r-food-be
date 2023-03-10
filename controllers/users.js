@@ -7,7 +7,6 @@ const bcrypt = require('bcrypt')
 const { connect } = require('../middlewares/redis')
 const { checkSizeUpload, checkExtensionFile } = require('../utils/uploadFile')
 const { uploadCloudinary, deleteCloudinary } = require('../utils/cloudinary')
-const { log } = require('console')
 
 const createUser = async (req, res) => {
   try {
@@ -39,7 +38,7 @@ const createUser = async (req, res) => {
       if (!checkSize) {
         throw {
           statusCode: 400,
-          message: 'File upload is too large! only support < 1 MB'
+          message: 'File upload is too large, only support < 1 MB !'
         }
       }
 
@@ -47,7 +46,7 @@ const createUser = async (req, res) => {
       if (!allowedFile) {
         throw {
           statusCode: 400,
-          message: `File is not support! format file must be image`
+          message: `File is not support, format file must be image !`
         }
       }
 
@@ -155,17 +154,19 @@ const editUser = async (req, res) => {
       }
     }
 
+    let hash
+
     if (password) {
-      const hash = bcrypt.hash(password, saltRounds)
+      hash = await bcrypt.hash(password, saltRounds)
       if (!hash) {
         throw { statusCode: 400, message: 'Authentication failed!' }
       }
     }
 
-    let file = req.files.photo
     let filename = null
 
-    if (file) {
+    if (req.files !== null && req.files.photo !== null) {
+      let file = req.files.photo
       const checkSize = checkSizeUpload(file)
       if (!checkSize) {
         throw {
@@ -189,19 +190,20 @@ const editUser = async (req, res) => {
         filename = uploadFile.urlUpload
       }
 
-      const deleteFile = await deleteCloudinary(getUser[0].photo)
+      const deleteFile = await deleteCloudinary(getUser[0]?.photo)
       if (!deleteFile.success) {
         throw { statusCode: 400, message: 'Delete old file error!' }
       }
     }
+    console.log('dibawah cloudinary')
 
     const updateData = await users.editUser({
       id,
-      name: name ?? getUser[0]?.name,
-      email: email ?? getUser[0]?.email,
-      phone: phone ?? getUser[0]?.phone,
-      password: password ? hash : getUser[0]?.password,
-      photo: filename ?? getUser[0]?.photo
+      name: name !== '' ? name : getUser[0]?.name,
+      email: email !== '' ? email : getUser[0]?.email,
+      phone: phone !== '' ? phone : getUser[0]?.phone,
+      password: password !== '' ? hash : getUser[0]?.password,
+      photo: filename !== null ? filename : getUser[0]?.photo
     })
 
     res.status(200).json({
