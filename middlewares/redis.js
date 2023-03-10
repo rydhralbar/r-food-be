@@ -36,7 +36,7 @@ const useRedis = async (req, res, next) => {
         typeSort: typeSort,
         page: parseInt(page) ?? 1,
         limit: parseInt(limit),
-        total_all_data: parseInt(total_all_dataRedis),
+        total_data: parseInt(total_all_dataRedis),
         total: JSON.parse(data).length,
         data: JSON.parse(data)
       })
@@ -44,7 +44,7 @@ const useRedis = async (req, res, next) => {
       next()
     }
   } catch (error) {
-    res.status(error?.statusCode ?? 500).json({
+    res.status(error?.code ?? 500).json({
       status: false,
       message: error?.message ?? error,
       data: []

@@ -28,7 +28,7 @@ const createUser = async (req, res) => {
 
     const hash = await bcrypt.hash(password, saltRounds)
     if (!hash) {
-      throw { statusCode: 400, message: 'Authentication failed!' }
+      throw { code: 400, message: 'Authentication failed!' }
     }
 
     let file = req.files?.photo
@@ -37,7 +37,7 @@ const createUser = async (req, res) => {
       const checkSize = checkSizeUpload(file)
       if (!checkSize) {
         throw {
-          statusCode: 400,
+          code: 400,
           message: 'File upload is too large, only support < 1 MB !'
         }
       }
@@ -45,14 +45,14 @@ const createUser = async (req, res) => {
       const allowedFile = checkExtensionFile(file)
       if (!allowedFile) {
         throw {
-          statusCode: 400,
+          code: 400,
           message: `File is not support, format file must be image !`
         }
       }
 
       const uploadFile = await uploadCloudinary(file)
       if (!uploadFile.success) {
-        throw { statusCode: 400, message: 'Upload file error!' }
+        throw { code: 400, message: 'Upload file error!' }
       } else {
         await users.createNewUser({
           name,
@@ -68,10 +68,10 @@ const createUser = async (req, res) => {
 
     res.status(201).json({
       status: true,
-      message: 'Register is successful!'
+      message: 'Register successful !'
     })
   } catch (error) {
-    res.status(error?.statusCode ?? 500).json({
+    res.status(error?.code ?? 500).json({
       status: false,
       message: error?.message ?? error,
       data: []
@@ -81,7 +81,7 @@ const createUser = async (req, res) => {
 
 const getUsers = async (req, res) => {
   try {
-    let statusCode = 200
+    let code = 200
     let message
     let dataUser = []
     let url
@@ -96,8 +96,8 @@ const getUsers = async (req, res) => {
     }
 
     if (dataUser.length < 1) {
-      statusCode = 400
-      message = 'Data'
+      code = 400
+      message = `Data with id ${id} does not exist`
     }
 
     connect.set('url', req.originalUrl, 'ex', 15)
@@ -107,7 +107,7 @@ const getUsers = async (req, res) => {
     if (page) connect.set('page', page ?? 1, 'ex', 15)
     if (limit) connect.set('limit', limit, 'ex', 15)
 
-    res.status(statusCode ?? 200).json({
+    res.status(code ?? 200).json({
       status: true,
       message: message ?? 'Data retrieved successfully',
       sort: sort ?? null,
@@ -118,7 +118,7 @@ const getUsers = async (req, res) => {
       data: dataUser
     })
   } catch (error) {
-    res.status(error?.statusCode ?? 500).json({
+    res.status(error?.code ?? 500).json({
       status: false,
       message: error?.message ?? error,
       data: []
@@ -159,7 +159,7 @@ const editUser = async (req, res) => {
     if (password) {
       hash = await bcrypt.hash(password, saltRounds)
       if (!hash) {
-        throw { statusCode: 400, message: 'Authentication failed!' }
+        throw { code: 400, message: 'Authentication failed!' }
       }
     }
 
@@ -170,29 +170,29 @@ const editUser = async (req, res) => {
       const checkSize = checkSizeUpload(file)
       if (!checkSize) {
         throw {
-          statusCode: 400,
-          message: 'File upload is too large! only support < 1 MB'
+          code: 400,
+          message: 'File upload is too large, only support < 1 mb !'
         }
       }
 
       const allowedFile = checkExtensionFile(file)
       if (!allowedFile) {
         throw {
-          statusCode: 400,
-          message: `File is not support! format file must be image`
+          code: 400,
+          message: `File is not support, format file must be photo !`
         }
       }
 
       const uploadFile = await uploadCloudinary(file)
       if (!uploadFile.success) {
-        throw { statusCode: 400, message: 'Upload file error!' }
+        throw { code: 400, message: 'Upload file error!' }
       } else {
         filename = uploadFile.urlUpload
       }
 
       const deleteFile = await deleteCloudinary(getUser[0]?.photo)
       if (!deleteFile.success) {
-        throw { statusCode: 400, message: 'Delete old file error!' }
+        throw { code: 400, message: 'Delete old file error!' }
       }
     }
     console.log('dibawah cloudinary')
@@ -212,7 +212,7 @@ const editUser = async (req, res) => {
       data: updateData
     })
   } catch (error) {
-    res.status(error?.statusCode ?? 500).json({
+    res.status(error?.code ?? 500).json({
       status: false,
       message: error?.message ?? error
     })
@@ -226,11 +226,11 @@ const deleteUser = async (req, res) => {
     const checkId = await users.getUserById({ id })
 
     if (checkId.length === 0) {
-      throw { statusCode: 400, message: 'Data is empty' }
+      throw { code: 400, message: 'Data doesnt exist' }
     } else {
       const deleteImage = await deleteCloudinary(checkId[0].photo)
       if (!deleteImage) {
-        throw { statusCode: 400, message: 'Failed to delete old photo' }
+        throw { code: 400, message: 'Failed to delete old photo' }
       }
     }
 

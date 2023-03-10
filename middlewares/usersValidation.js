@@ -20,10 +20,10 @@ const validateUser = async (req, res, next) => {
     if (userIdToken === data[0]?.id) {
       next()
     } else {
-      throw { statusCode: 401, message: 'You are not allowed!' }
+      throw { code: 401, message: 'You are not allowed!' }
     }
   } catch (error) {
-    res.status(error?.statusCode ?? 500).json({
+    res.status(error?.code ?? 500).json({
       status: false,
       message: error?.message ?? 'There is a problem with your token!'
     })

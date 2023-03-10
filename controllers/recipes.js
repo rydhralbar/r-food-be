@@ -23,7 +23,7 @@ const createRecipe = async (req, res) => {
 
     if (checkUser.length === 0) {
       throw {
-        statusCode: 400,
+        code: 400,
         message: `User with id ${userIdToken} does not exist`
       }
     }
@@ -32,7 +32,7 @@ const createRecipe = async (req, res) => {
 
     if (checkRecipe.length > 0) {
       throw {
-        statusCode: 400,
+        code: 400,
         message: `A recipe with the title ${title} already exists`
       }
     }
@@ -43,7 +43,7 @@ const createRecipe = async (req, res) => {
       const checkSize = checkSizeUpload(file)
       if (!checkSize) {
         throw {
-          statusCode: 400,
+          code: 400,
           message: 'File upload is too large! only support < 1 MB'
         }
       }
@@ -51,14 +51,14 @@ const createRecipe = async (req, res) => {
       const allowedFile = checkExtensionFile(file)
       if (!allowedFile) {
         throw {
-          statusCode: 400,
+          code: 400,
           message: `File is not support! format file must be image`
         }
       }
 
       const uploadFile = await uploadCloudinary(file)
       if (!uploadFile.success) {
-        throw { statusCode: 400, message: 'Upload file error!' }
+        throw { code: 400, message: 'Upload file error!' }
       } else {
         const data = await recipes.createNewRecipe({
           userId: userIdToken,
@@ -82,7 +82,7 @@ const createRecipe = async (req, res) => {
       }
     } else {
       throw {
-        statusCode: 400,
+        code: 400,
         message: `Photo must be required!`
       }
     }
@@ -103,7 +103,7 @@ const createRecipe = async (req, res) => {
 
 const getRecipes = async (req, res) => {
   try {
-    const statusCode = 200
+    const code = 200
     let message
     let recipesData = []
 
@@ -125,7 +125,7 @@ const getRecipes = async (req, res) => {
     }
 
     if (recipesData.length < 1) {
-      statusCode = 400
+      code = 400
       message = 'Data not found!'
     }
 
@@ -139,7 +139,7 @@ const getRecipes = async (req, res) => {
     if (limit) connect.set('limit', limit, 'ex', 15)
     if (total_all_data) connect.set('total_all_data', total_all_data, 'ex', 15)
 
-    res.status(statusCode ?? 200).json({
+    res.status(code ?? 200).json({
       status: true,
       message: message ?? 'Data retrieved successfully !',
       sort: sort ?? null,
@@ -176,7 +176,7 @@ const getSearchedRecipes = async (req, res) => {
 
     totalData = getData.length
     if (totalData < 1) {
-      throw { statusCode: 400, message: 'Data not found!' }
+      throw { code: 400, message: 'Data not found!' }
     }
 
     res.status(200).json({
@@ -192,7 +192,7 @@ const getSearchedRecipes = async (req, res) => {
     })
   } catch (error) {
     console.log(error)
-    res.status(error?.statusCode ?? 500).json({
+    res.status(error?.code ?? 500).json({
       status: false,
       message: error?.message ?? error
     })
@@ -211,12 +211,12 @@ const editRecipe = async (req, res) => {
 
     const checkUsers = await users.getUsers({ id: userIdToken })
     if (checkUsers.length < 1) {
-      throw { statusCode: 400, message: 'User doesnt exist!' }
+      throw { code: 400, message: `User with id ${userIdToken} does not exist` }
     }
 
     const getRecipes = await recipes.getRecipes({ id })
     if (getRecipes.length < 1) {
-      throw { statusCode: 400, message: 'Data not found, please try again!' }
+      throw { code: 400, message: 'Data does not exist, please try again!' }
     }
 
     let filename = null
@@ -226,29 +226,29 @@ const editRecipe = async (req, res) => {
       const checkSize = checkSizeUpload(file)
       if (!checkSize) {
         throw {
-          statusCode: 400,
-          message: 'File upload is too large! only support < 1 MB'
+          code: 400,
+          message: 'File upload is too large, only support < 1 mb !'
         }
       }
 
       const allowedFile = checkExtensionFile(file)
       if (!allowedFile) {
         throw {
-          statusCode: 400,
-          message: `File is not support! format file must be image`
+          code: 400,
+          message: `File is not support, format file must be photo !`
         }
       }
 
       const uploadFile = await uploadCloudinary(file)
       if (!uploadFile.success) {
-        throw { statusCode: 400, message: 'Upload file error!' }
+        throw { code: 400, message: 'Upload file error!' }
       } else {
         filename = uploadFile.urlUpload
       }
 
       const deleteFile = await deleteCloudinary(getRecipes[0]?.photo)
       if (!deleteFile.success) {
-        throw { statusCode: 400, message: 'Delete old file error!' }
+        throw { code: 400, message: 'Delete old file error!' }
       }
     }
 
@@ -286,11 +286,11 @@ const deleteRecipe = async (req, res) => {
     console.log(checkId)
 
     if (checkId.length === 0) {
-      throw { statusCode: 400, message: 'Data is empty' }
+      throw { code: 400, message: 'Data doesnt exist' }
     } else {
       const deleteFile = await deleteCloudinary(checkId[0].photo)
       if (!deleteFile.success) {
-        throw { statusCode: 400, message: 'Delete old photo error!' }
+        throw { code: 400, message: 'Delete old photo error!' }
       }
     }
 

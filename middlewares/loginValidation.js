@@ -12,19 +12,19 @@ const checkToken = async (req, res, next) => {
         process.env.JWT_KEY,
         (err, decoded) => {
           if (err) {
-            throw { statusCode: 401, message: 'Token error, please try again!' }
+            throw { code: 401, message: 'Token error, please try again!' }
           }
 
           if (Date.now() >= decoded.exp * 1000) {
             throw {
-              statusCode: 401,
-              message: 'Token expired!'
+              code: 401,
+              message: 'Token expired, please re-login!'
             }
           }
 
           res.status(200).json({
             status: true,
-            message: 'Your account has been logged!',
+            message: 'Your account has been logged !',
             token: authorization.replace('Bearer ', '')
           })
         }
@@ -33,7 +33,7 @@ const checkToken = async (req, res, next) => {
       next()
     }
   } catch (error) {
-    res.status(error?.statusCode ?? 500).json({
+    res.status(error?.code ?? 500).json({
       status: false,
       message: error?.message ?? error,
       data: []
