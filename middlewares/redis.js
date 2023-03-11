@@ -4,8 +4,7 @@ const Redis = require('ioredis')
 const connect = new Redis({
   host: process.env.REDIS_HOST,
   port: process.env.REDIS_PORT,
-  password: process.env.REDIS_PASSWORD,
-  maxRetriesPerRequest: 75
+  password: process.env.REDIS_PASSWORD
 })
 
 const useRedis = async (req, res, next) => {
