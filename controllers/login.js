@@ -9,8 +9,6 @@ const login = async (req, res) => {
 
     const checkEmail = await users.getUserByEmail({ email })
 
-    console.log(checkEmail)
-
     if (checkEmail?.length === 0) {
       throw { code: 400, message: 'Unregistered email' }
     }
@@ -29,7 +27,7 @@ const login = async (req, res) => {
           // { expiresIn: '2h' }
         )
 
-        if (res) {
+        if (result) {
           res.status(200).json({
             status: true,
             message: 'Login successful',
