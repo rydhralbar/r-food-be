@@ -129,13 +129,13 @@ const getRecipes = async (req, res) => {
 
     const total_all_data = recipesData?.[0]?.total_recipes ?? 0
 
-    // connect.set('url', req.originalUrl, 'ex', 15)
-    // connect.set('data', JSON.stringify(recipesData), 'ex', 15)
-    // if (sort) connect.set('sort', sort, 'ex', 15)
-    // if (typeSort) connect.set('typeSort', typeSort, 'ex', 15)
-    // if (page) connect.set('page', page ?? 1, 'ex', 15)
-    // if (limit) connect.set('limit', limit, 'ex', 15)
-    // if (total_all_data) connect.set('total_all_data', total_all_data, 'ex', 15)
+    connect.set('url', req.originalUrl, 'ex', 15)
+    connect.set('data', JSON.stringify(recipesData), 'ex', 15)
+    if (sort) connect.set('sort', sort, 'ex', 15)
+    if (typeSort) connect.set('typeSort', typeSort, 'ex', 15)
+    if (page) connect.set('page', page ?? 1, 'ex', 15)
+    if (limit) connect.set('limit', limit, 'ex', 15)
+    if (total_all_data) connect.set('total_all_data', total_all_data, 'ex', 15)
 
     res.status(code ?? 200).json({
       status: true,
