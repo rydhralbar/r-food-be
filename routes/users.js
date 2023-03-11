@@ -10,7 +10,7 @@ const { useRedis } = require('../middlewares/redis')
 
 router.post('/add', validateCreateUser, userController.createUser)
 
-router.get('/:id?', validateToken, useRedis, userController.getUsers)
+router.get('/:id?', validateToken, userController.getUsers)
 
 router.patch(
   '/:id',

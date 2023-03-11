@@ -2,7 +2,7 @@ const users = require('../models/users')
 const { v4: uuidv4 } = require('uuid')
 const path = require('path')
 const bcrypt = require('bcrypt')
-const { connect } = require('../middlewares/redis')
+// const { connect } = require('../middlewares/redis')
 const { checkSizeUpload, checkExtensionFile } = require('../utils/uploadFile')
 const { uploadCloudinary, deleteCloudinary } = require('../utils/cloudinary')
 
@@ -98,12 +98,12 @@ const getUsers = async (req, res) => {
       message = `Data with id ${id} does not exist`
     }
 
-    connect.set('url', req.originalUrl, 'ex', 15)
-    connect.set('data', JSON.stringify(dataUser), 'ex', 15)
-    if (sort) connect.set('sort', sort, 'ex', 15)
-    if (typeSort) connect.set('typeSort', typeSort, 'ex', 15)
-    if (page) connect.set('page', page ?? 1, 'ex', 15)
-    if (limit) connect.set('limit', limit, 'ex', 15)
+    // connect.set('url', req.originalUrl, 'ex', 15)
+    // connect.set('data', JSON.stringify(dataUser), 'ex', 15)
+    // if (sort) connect.set('sort', sort, 'ex', 15)
+    // if (typeSort) connect.set('typeSort', typeSort, 'ex', 15)
+    // if (page) connect.set('page', page ?? 1, 'ex', 15)
+    // if (limit) connect.set('limit', limit, 'ex', 15)
 
     res.status(code ?? 200).json({
       status: true,

@@ -15,7 +15,7 @@ router.post(
   recipeController.createRecipe
 )
 
-router.get('/:id?', useRedis, recipeController.getRecipes)
+router.get('/:id?', recipeController.getRecipes)
 
 router.get(
   '/search/by',
