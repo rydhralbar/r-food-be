@@ -3,18 +3,16 @@ const {
   validateCreateVideo,
   validateEditVideo
 } = require('../middlewares/usersValidation')
-const userController = require('../controllers/videosteps')
+const videoController = require('../controllers/recipeVideos')
+const { validateToken } = require('../middlewares/webtoken')
+const { validateUser } = require('../middlewares/videoValidation')
 
-// create video
-router.post('', validateCreateVideo, userController.createVideo)
+router.post('/', validateToken, validateUser, videoController.createNewVideo)
 
-// get video
-router.get('/:id?', userController.getVideo)
+router.get('/:id?', videoController.getVideos)
 
-// edit video
-router.patch('/:id', validateEditVideo, userController.editVideo)
+router.patch('/:id', validateToken, validateUser, videoController.editVideo)
 
-// delete video
-router.delete('/:id', userController.deleteVideo)
+router.delete('/:id', validateToken, validateUser, videoController.deleteVideo)
 
 module.exports = router

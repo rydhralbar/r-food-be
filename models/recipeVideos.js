@@ -1,20 +1,53 @@
-const db = require('../db') // import dari file ./db.js
+const db = require('../db')
 
 const createVideo = async (params) => {
   const { videos } = params
   return await db`INSERT INTO recipe_videos ${db(videos, 'recipe_id', 'video')}`
 }
 
-const getVideoById = async (params) => {
-  const { id } = params
+const getVideos = async (params) => {
+  const { id, recipeId, limit, page, sort, typeSort } = params
 
-  return await db`SELECT * FROM video_step_recipe WHERE id = ${id}`
+  if (id) {
+    return await db`SELECT recipe_videos.*, recipes.* FROM recipe_videos LEFT JOIN recipes ON recipes.id = recipe_videos.recipe_id WHERE recipe_videos.id = ${id}`
+  }
+
+  if (recipeId) {
+    if (sort) {
+      return typeSort && typeSort === 'desc'
+        ? await db`SELECT recipe_videos.*, recipes.* FROM recipe_videos LEFT JOIN recipes ON recipes.id = recipe_videos.recipe_id WHERE recipe_videos.id = ${recipeId} ORDER BY ${db(
+            sort
+          )} DESC LIMIT ${limit ?? null} OFFSET ${
+            page ? limit * (page - 1) : 0
+          }`
+        : await db`SELECT recipe_videos.*, recipes.* FROM recipe_videos LEFT JOIN recipes ON recipes.id = recipe_videos.recipe_id WHERE recipe_videos.id = ${recipeId} ORDER BY ${db(
+            sort
+          )} ASC LIMIT ${limit ?? null} OFFSET ${page ? limit * (page - 1) : 0}`
+    } else {
+      return await db`SELECT recipe_videos.*, recipes.* FROM recipe_videos LEFT JOIN recipes ON recipes.id = recipe_videos.recipe_id WHERE recipe_videos.id = ${recipeId} LIMIT ${
+        limit ?? null
+      } OFFSET ${page ? limit * (page - 1) : 0}`
+    }
+  }
+
+  if (sort) {
+    return typeSort && typeSort === 'desc'
+      ? await db`SELECT * FROM recipe_videos ORDER BY ${db(sort)} DESC LIMIT ${
+          limit ?? null
+        } OFFSET ${page ? limit * (page - 1) : 0}`
+      : await db`SELECT * FROM recipe_videos ORDER BY ${db(sort)} ASC LIMIT ${
+          limit ?? null
+        } OFFSET ${page ? limit * (page - 1) : 0}`
+  } else {
+    return await db`SELECT * FROM recipe_videos LIMIT ${limit ?? null} OFFSET ${
+      page ? limit * (page - 1) : 0
+    }`
+  }
 }
 
-const getVideos = async (params) => {
-  const { recipeId } = params
-
-  return await db`SELECT * FROM recipe_videos WHERE recipe_id = ${recipeId}`
+const editVideo = async (params) => {
+  const { id, video } = params
+  return await db`UPDATE recipe_videos SET "video"=${video} WHERE id=${id}`
 }
 
 const checkRecipeId = async (params) => {
@@ -23,34 +56,14 @@ const checkRecipeId = async (params) => {
   return await db`SELECT id FROM food_recipe WHERE id = ${recipeId}`
 }
 
-const editVideo = async (params) => {
-  const {
-    id,
-    videoStep1,
-    videoStep2,
-    videoStep3,
-    videoStep4,
-    videoStep5,
-    getVideos,
-    recipeId
-  } = params
-
-  return await db`
-        UPDATE video_step_recipe SET
-          "videoStep1" = ${videoStep1 || getVideos[0]?.videoStep1},
-          "videoStep2" = ${videoStep2 || getVideos[0]?.videoStep2},
-          "videoStep3" = ${videoStep3 || getVideos[0]?.videoStep3},
-          "videoStep4" = ${videoStep4 || getVideos[0]?.videoStep4},
-          "videoStep5" = ${videoStep5 || getVideos[0]?.videoStep5},
-          "recipeId" = ${recipeId || getVideos[0]?.recipeId}
-          WHERE "id" = ${id};
-      `
-}
-
 const deleteVideo = async (params) => {
-  const { recipeId } = params
+  const { id, recipeId } = params
 
-  return await db`DELETE FROM recipe_videos WHERE recipe_id = ${recipeId}`
+  if (recipeId) {
+    return await db`DELETE FROM recipe_videos WHERE recipe_id = ${recipeId}`
+  } else {
+    return await db`DELETE FROM recipe_videos WHERE id = ${id}`
+  }
 }
 
 const getSortVideoId = async () => {
@@ -65,8 +78,8 @@ const checkVideoId = async (params) => {
 
 module.exports = {
   createVideo,
-  getVideoById,
   getVideos,
+  editVideo,
   checkRecipeId,
   editVideo,
   deleteVideo,

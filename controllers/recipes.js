@@ -106,7 +106,7 @@ const getRecipes = async (req, res) => {
     let recipesData = []
 
     const { id } = req.params
-    const { userId, limit, page, sort, typeSort } = req.query // ?limit=&page=&sort=&typeSort=
+    const { userId, limit, page, sort, typeSort } = req.query
 
     if (id) {
       recipesData = await recipes.getRecipes({ id })
@@ -274,7 +274,6 @@ const editRecipe = async (req, res) => {
   }
 }
 
-// delete recipe
 const deleteRecipe = async (req, res) => {
   try {
     const { id } = req.params

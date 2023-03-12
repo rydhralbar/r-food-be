@@ -37,7 +37,6 @@ const getRecipes = async (params) => {
             sort
           )} ASC LIMIT ${limit ?? null} OFFSET ${page ? limit * (page - 1) : 0}`
     } else {
-      // get all data without sort
       return await db`SELECT (
       SELECT COUNT(*)
       FROM   recipes
@@ -47,7 +46,6 @@ const getRecipes = async (params) => {
     }
   }
 
-  // get all data with sort
   if (sort) {
     return typeSort && typeSort === 'desc'
       ? await db`SELECT (
@@ -151,7 +149,6 @@ const getRecipeSearchAsc = async (params) => {
   }) ORDER BY title ASC`
 }
 
-// get searched recipe sort by title search
 const getRecipeSearchDesc = async (params) => {
   const { title } = params
 
@@ -159,8 +156,6 @@ const getRecipeSearchDesc = async (params) => {
     '%' + title + '%'
   }) ORDER BY title DESC`
 }
-
-// get searched recipe
 
 const getRecipeSortId = async () => {
   return await db`SELECT * FROM food_recipe ORDER BY id ASC`
@@ -182,6 +177,5 @@ module.exports = {
   getRecipeSortId,
   checkId,
   getRecipePagin,
-  // getPaginLimit,
   getCountRecipe
 }

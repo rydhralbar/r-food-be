@@ -43,7 +43,7 @@ app.use('/users', userRoutes)
 
 app.use('/recipes', recipeRoutes)
 
-app.use('/recipe-videos', videoRoutes)
+app.use('/recipe-video', videoRoutes)
 
 app.get('/', (req, res) => {
   res.json({ status: true, message: 'Server running', version: '1.0' })
