@@ -17,12 +17,12 @@ app.use(bodyParser.urlencoded({ extended: false }))
 
 app.use(bodyParser.json())
 
-app.use(
-  cors({
-    origin: 'http://localhost:3000',
-    methods: ['POST', 'GET', 'PATCH', 'DELETE']
-  })
-)
+// app.use(
+//   cors({
+//     origin: 'http://localhost:3000',
+//     methods: ['POST', 'GET', 'PATCH', 'DELETE']
+//   })
+// )
 
 app.use(helmet())
 
