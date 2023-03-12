@@ -194,14 +194,15 @@ const editUser = async (req, res) => {
       }
     }
     console.log('dibawah cloudinary')
+    console.log(getUser)
 
     const updateData = await users.editUser({
       id,
-      name: name !== '' ? name : getUser[0]?.name,
-      email: email !== '' ? email : getUser[0]?.email,
-      phone: phone !== '' ? phone : getUser[0]?.phone,
-      password: password !== '' ? hash : getUser[0]?.password,
-      photo: filename !== null ? filename : getUser[0]?.photo
+      name: name && name !== '' ? name : getUser[0]?.name,
+      email: email && email !== '' ? email : getUser[0]?.email,
+      phone: phone && phone !== '' ? phone : getUser[0]?.phone,
+      password: password && password !== '' ? hash : getUser[0]?.password,
+      photo: filename ?? getUser[0]?.photo
     })
 
     res.status(200).json({
