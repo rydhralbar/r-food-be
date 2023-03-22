@@ -161,8 +161,6 @@ const getSearchedRecipes = async (req, res) => {
   try {
     const { searchBy, keyword, page, limit, sort, typeSort } = req.query
 
-    console.log('berjalan search')
-
     const getData = await recipes.getSearchedRecipes({
       searchBy,
       keyword,
@@ -189,7 +187,6 @@ const getSearchedRecipes = async (req, res) => {
       data: getData
     })
   } catch (error) {
-    console.log(error)
     res.status(error?.code ?? 500).json({
       status: false,
       message: error?.message ?? error
@@ -279,8 +276,6 @@ const deleteRecipe = async (req, res) => {
     const { id } = req.params
 
     const checkId = await recipes.getRecipes({ id })
-
-    console.log(checkId)
 
     if (checkId.length === 0) {
       throw { code: 400, message: 'Data doesnt exist' }

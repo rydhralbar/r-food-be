@@ -27,7 +27,6 @@ const uploadCloudinary = async (file) => {
 }
 
 const deleteCloudinary = async (url) => {
-  console.log(url)
   let res
   const urlSplited = url.split('/')
   const filename = urlSplited[urlSplited.length - 1]

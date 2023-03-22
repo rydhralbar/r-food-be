@@ -193,8 +193,6 @@ const editUser = async (req, res) => {
         throw { code: 400, message: 'Delete old file error!' }
       }
     }
-    console.log('dibawah cloudinary')
-    console.log(getUser)
 
     const updateData = await users.editUser({
       id,
