@@ -1,5 +1,5 @@
 # r-food-be
-R Food is a website for uploading or watching interesting ways to cook home food, using framework node js and express js.
+R Food is a website where you can get recipes for five-star meals that you can make yourself. It was created using React JS, Node JS, and Express JS.
 
 # Express Starterkit
 
